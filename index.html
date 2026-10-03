@@ -7,6 +7,12 @@
 <meta property="og:title" content="Loyers au m² en France">
 <meta property="og:description" content="Carte des loyers en France, commune par commune : prix au m², loyer d'un 1 ou 2 pièces, d'un 3 pièces et d'une maison, filtre budget et comparaison de communes. Données officielles 2025.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://maths-sciences-lp.github.io/carte-loyers/">
+<meta property="og:image" content="https://maths-sciences-lp.github.io/carte-loyers/apercu.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c5cab'/%3E%3Cpath d='M16 7 5 16h3v9h6v-6h4v6h6v-9h3z' fill='white'/%3E%3C/svg%3E">
 <meta name="color-scheme" content="light dark">
 <title>Loyers au m² en France</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,10 +28,10 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#2c3442; --stroke:#10141b; --hover:#ffffff; color-scheme:dark}}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#2c3442; --stroke:#10141b; --hover:#ffffff; color-scheme:dark}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 40px}
@@ -39,15 +45,18 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .figs{display:flex;flex-wrap:wrap;gap:12px 28px;margin:22px 0 0}
 .fig b{display:block;font-family:var(--display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 .fig span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:24px;margin-top:22px}
-@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.main{display:flex;flex-direction:column;gap:22px;margin-top:22px}
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:24px}
+@media (max-width:860px){.grid{display:contents}#mapcard{order:1}.budget{order:2}.panel{order:3}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
 #map{width:100%;height:auto;display:block}
 .maphead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:6px}
 #maptitle{flex:1 1 240px;min-width:0}
+#dep-sel{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 12px;cursor:pointer}
+#dep-sel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .maphead .t{font-family:var(--display);font-weight:700;font-size:17px}
 .maphead .h{color:var(--muted);font-size:13px}
-.back{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 14px;cursor:pointer}
+.back{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 14px;cursor:pointer}
 .back:hover{border-color:var(--accent);color:var(--accent)}
 .back:focus-visible,.list li.click:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #map path{vector-effect:non-scaling-stroke}
@@ -80,14 +89,14 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .cmp td:first-child,.cmp th:first-child{text-align:left;padding-left:0}
 .cmp td b{font-weight:600;font-size:15px;white-space:nowrap}
 .cmp tr.act td{border-top:0;padding-top:8px}
-.lnk{all:unset;cursor:pointer;color:var(--accent);font-size:13px}
+.lnk{all:unset;cursor:pointer;color:var(--accent);font-size:13px;display:inline-block;padding:8px 0}
 .lnk:hover{text-decoration:underline}
 .lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mapwrap{position:relative}
 #cv{position:absolute;inset:0;width:100%;height:100%}
 #map{position:relative}
 #map path.mini{pointer-events:none;stroke:none}
-.budget{margin-top:22px}
+.budget{margin-top:0}
 .bud-row{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end}
 .bud-f{display:flex;flex-direction:column;gap:6px;min-width:0}
 .bud-main{flex:1 1 260px}
@@ -95,7 +104,12 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .bud-amount input{font-family:var(--display);font-weight:700;font-size:28px;width:5.2ch;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--fg);padding:0 2px;font-variant-numeric:tabular-nums}
 .bud-amount input:focus{outline:none;border-bottom-color:var(--accent)}
 .bud-amount span{font-family:var(--display);font-size:22px;font-weight:700;color:var(--muted)}
-#bud-r{width:100%;accent-color:var(--accent)}
+#bud-r{-webkit-appearance:none;appearance:none;width:100%;height:32px;margin:0;background:transparent;cursor:pointer;--p:15%}
+#bud-r::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(to right,var(--accent) 0 var(--p),var(--line) var(--p) 100%)}
+#bud-r::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#bud-r::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+#bud-r::-moz-range-progress{height:6px;border-radius:3px;background:var(--accent)}
+#bud-r::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 #bud-t button{padding:7px 12px}
 .btn{font:inherit;font-weight:600;border:0;background:var(--accent);color:var(--surface);border-radius:999px;padding:9px 18px;cursor:pointer}
 .btn:focus-visible,#bud-r:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -136,10 +150,10 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .drom figure{margin:0;text-align:center}
 .drom figcaption{font-size:12px;color:var(--muted)}
 .drom svg{width:100%;height:70px;display:block}
-.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 0;margin-top:14px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.legend .sw{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 0;min-width:38px}
+.legend{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 0;margin-top:14px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.legend .sw{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 28px;min-width:0;font-size:11px;white-space:nowrap}
 .legend .sw i{display:block;height:12px;width:100%;border-right:2px solid var(--surface)}
-.legend .unit{flex-basis:100%;margin-bottom:4px}
+.legend .unit{flex:0 0 100%;margin-bottom:4px}
 .tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.14);z-index:5;min-width:170px}
 .tip b{font-family:var(--display);font-size:15px}
 .tip .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -157,12 +171,15 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
 .rank{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:420px){.rank{grid-template-columns:1fr}}
 .rank ol{list-style:none;margin:0;padding:0;font-variant-numeric:tabular-nums}
-.rank li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid var(--line);font-size:14px}
-.rank li button{all:unset;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0;border-top:1px solid var(--line);font-size:14px}
+.rank li button{all:unset;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;padding:8px 0}
 .rank li button:hover{color:var(--accent);text-decoration:underline}
 .rank h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
 .empty{color:var(--muted);font-size:14px;margin:8px 0 0}
-.note{color:var(--muted);font-size:13px;margin-top:26px;max-width:80ch}
+.note{color:var(--muted);font-size:13px;line-height:1.55;margin-top:32px;padding-top:18px;border-top:1px solid var(--line);max-width:80ch}
+.note .nh{font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.note ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.note .credit{margin:0 0 10px;color:var(--fg)}
 .note a{color:var(--accent)}
 .chip{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
 </style>
@@ -185,6 +202,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
 
   <div class="figs" id="figs"></div>
 
+  <div class="main">
   <section class="card budget" id="budget" aria-labelledby="bud-h">
     <div class="bud-row">
       <div class="bud-f bud-main">
@@ -211,6 +229,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
     <div class="card" id="mapcard">
       <div class="maphead">
         <span id="maptitle"><span class="h">Cliquez sur un département pour voir ses communes.</span></span>
+        <select id="dep-sel" aria-label="Aller à un département"><option value="">Choisir un département…</option></select>
         <button class="back" id="back-fr" hidden>← France entière</button>
       </div>
       <div class="top5" id="top5" hidden></div>
@@ -240,8 +259,9 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
       </div>
     </div>
   </div>
+  </div>
 
-  <p class="note" id="note"></p>
+  <footer class="note" id="note"></footer>
 </div>
 <div class="tip" id="tip" hidden></div>
 
@@ -435,6 +455,8 @@ function moveTip(ev){
   if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
   tip.style.left = Math.max(8,x) + "px"; tip.style.top = Math.max(8,y) + "px";
 }
+addEventListener("scroll", () => { tip.hidden = true; }, {passive: true});
+document.addEventListener("touchstart", e => { if (!e.target.closest("#map, #drom")) tip.hidden = true; }, {passive: true});
 allDeps()
   .on("mouseenter", (ev,f) => showDepTip(ev, f.properties.c))
   .on("mousemove", moveTip)
@@ -481,6 +503,9 @@ const backBtn = document.getElementById("back-fr");
 const mapTitle = document.getElementById("maptitle");
 const HINT = mapTitle.innerHTML;
 backBtn.onclick = () => zoomOut();
+const depSel = document.getElementById("dep-sel");
+Object.keys(DATA.deps).sort((x,y) => x.localeCompare(y, "fr", {numeric: true})).forEach(c => depSel.add(new Option(`${c} · ${DATA.deps[c].n}`, c)));
+depSel.onchange = () => { if (depSel.value) zoomTo(depSel.value); else zoomOut(); };
 
 function comPaths(g, feats, gen){
   return g.selectAll("path").data(feats, f => f.properties.c).join("path")
@@ -495,6 +520,7 @@ function zoomTo(code, hl = null){
   tip.hidden = true;
   const d = DATA.deps[code]; if (!d) return;
   zoomed = code;
+  depSel.value = code;
   const feats = comFeatures(code);
   zg.attr("display","none");
   backBtn.hidden = false;
@@ -527,7 +553,7 @@ function zoomTo(code, hl = null){
 }
 
 function zoomOut(){
-  tip.hidden = true; zoomed = null; hlCode = null;
+  tip.hidden = true; zoomed = null; hlCode = null; depSel.value = "";
   gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
   gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
   gDeps.selectAll("path").classed("dim", false);
@@ -552,11 +578,19 @@ function paintDeps(){
 
 // Communes de toute la métropole, dessinées sur un canevas en mode budget
 const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
-let P2D = null;
+let P2D = null, p2dTodo = null;
+// Prépare les contours par petits morceaux ; sans délai (dl absent), termine tout de suite
+function p2dStep(dl){
+  if (!p2dTodo){ P2D = []; p2dTodo = Object.keys(COMGEO).filter(d => d.length < 3); }
+  while (p2dTodo.length && (!dl || dl.timeRemaining() > 3)){
+    for (const f of comFeatures(p2dTodo.shift())) P2D.push({c: f.properties.c, p: new Path2D(path(f))});
+  }
+  return !p2dTodo.length;
+}
 function drawCanvas(){
   const show = BUD.on && !zoomed;
   cv.hidden = !show; if (!show) return;
-  if (!P2D){ P2D = []; for (const d of Object.keys(COMGEO)) if (d.length < 3) for (const f of comFeatures(d)) P2D.push({c: f.properties.c, p: new Path2D(path(f))}); }
+  p2dStep();
   const dpr = Math.min(2, devicePixelRatio || 1);
   if (cv.width !== W*dpr){ cv.width = W*dpr; cv.height = H*dpr; }
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
@@ -608,14 +642,16 @@ function applyBudget(){
 const budV = document.getElementById("bud-v"), budR = document.getElementById("bud-r");
 let budTimer;
 const budChanged = () => { BUD.on = true; clearTimeout(budTimer); budTimer = setTimeout(applyBudget, 80); };
-budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = +budR.value; budChanged(); });
-budV.addEventListener("input", () => { const v = +budV.value; if (v >= 100 && v <= 10000){ BUD.v = v; budR.value = Math.min(+budR.max, v); budChanged(); } });
+const syncRange = () => budR.style.setProperty("--p", (budR.value - budR.min) / (budR.max - budR.min) * 100 + "%");
+syncRange();
+budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = +budR.value; syncRange(); budChanged(); });
+budV.addEventListener("input", () => { const v = +budV.value; if (v >= 100 && v <= 10000){ BUD.v = v; budR.value = Math.min(+budR.max, v); syncRange(); budChanged(); } });
 document.querySelectorAll("#bud-t button").forEach(b => b.onclick = () => {
   BUD.t = b.dataset.t;
   document.querySelectorAll("#bud-t button").forEach(x => x.setAttribute("aria-pressed", x === b));
   budChanged();
 });
-document.getElementById("bud-on").onclick = () => { BUD.on = true; applyBudget(); };
+document.getElementById("bud-on").onclick = () => { BUD.on = true; applyBudget(); if (matchMedia("(max-width:860px)").matches) showMap(); };
 document.getElementById("bud-off").onclick = () => { BUD.on = false; applyBudget(); };
 
 function highlight(code){
@@ -635,7 +671,7 @@ function drawLegend(){
       <span class="li"><i class="dot st2"></i>${BUD_LAB[2]}</span>`;
     return;
   }
-  const labels = ["< 9", ...BREAKS.map(b => String(b).replace(".",",")+(b===30?" et +":""))];
+  const labels = ["< 9", ...BREAKS.map(b => String(b).replace(".",",")+(b===30?"\u00a0+":""))];
   document.getElementById("legend").innerHTML = `<span class="unit">€ par m² et par mois, charges comprises (chaque case part de la valeur indiquée)</span>` +
     PAL.map((col,i)=>`<div class="sw"><i style="background:${col}"></i>${labels[i]}</div>`).join("");
 }
@@ -674,7 +710,7 @@ function selectDep(code){
   const cs = COMS.filter(c => c.d === code).sort((x,y)=>y.p-x.p).slice(0,15);
   list.innerHTML = `<li class="h"><span>Communes les plus peuplées</span><span>Appart.</span><span class="x">Maison</span></li>` +
     cs.map(c => `<li class="click" data-c="${c.c}" tabindex="0"><span class="n">${c.n}</span><span>${fmt(c.a)}</span><span class="x">${fmt(c.m)}</span></li>`).join("") +
-    `<li><span class="n"><button id="back" style="all:unset;cursor:pointer;color:var(--accent)">← Revenir au classement</button></span><span></span><span></span></li>`;
+    `<li><span class="n"><button id="back" class="lnk">← Revenir au classement</button></span><span></span><span></span></li>`;
   list.querySelectorAll("li[data-c]").forEach(li => {
     li.onclick = () => { highlight(li.dataset.c); showMap(); };
     li.onkeydown = e => { if (e.key === "Enter") li.onclick(); };
@@ -723,7 +759,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `Carte réalisée pour la chaîne Maths·Sciences LP. Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025. Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025. Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place. Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr). Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement. Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon. Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille). Mayotte n'est pas couverte.`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2><p class="credit">Carte réalisée pour la chaîne Maths·Sciences LP.</p><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li></ul>`;
 
 
 // --- Comparer deux communes
@@ -788,6 +824,9 @@ function drawCmp(){
 });
 
 search(); render(); drawCities(); drawCmp();
+const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({timeRemaining: () => 8}), 300));
+const prewarm = dl => { if (!p2dStep(dl)) idle(prewarm); };
+idle(prewarm);
 </script>
 
 </body>
