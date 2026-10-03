@@ -19,3 +19,19 @@ Le loyer par mois est calculé ainsi : prix au m² publié par la source × surf
 - Contours des communes et des départements : IGN Admin Express, via Etalab et france-geojson (Licence Ouverte).
 
 Les cartes des loyers des différentes années ne sont pas comparables entre elles (avertissement de la source).
+
+## Mettre à jour la carte
+
+Les fichiers de fabrication sont dans `source/` :
+
+- `preparer_donnees.py` télécharge les données officielles et produit `data.json`, `geo.json`, `communes.json` et `villes.json` ;
+- `template.html` contient la page (mise en forme et code) ;
+- `assembler.py` réunit le tout dans `index.html`.
+
+```bash
+cd source
+python3 preparer_donnees.py
+python3 assembler.py
+```
+
+Pour une nouvelle édition de la carte des loyers, remplacer les adresses des fichiers CSV en tête de `preparer_donnees.py`, puis relancer les deux commandes.

@@ -1,0 +1,777 @@
+<title>Loyers au m² en France</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Mise en page : carte à gauche, panneau de lecture à droite ; une colonne sur téléphone */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --fg:#17202e; --muted:#5b6575; --line:#dde1e8;
+  --accent:#1c5cab; --accent-soft:#e3edfa; --mark:#e8590c; --ok:#2f9e44; --close:#f0a92b; --over:#d9dde4; --stroke:#ffffff; --hover:#17202e;
+  --c0:#cde2fb; --c1:#9ec5f4; --c2:#6da7ec; --c3:#3987e5; --c4:#256abf; --c5:#1c5cab; --c6:#184f95; --c7:#104281; --c8:#0c3466; --c9:#072250;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#2c3442; --stroke:#10141b; --hover:#ffffff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#2c3442; --stroke:#10141b; --hover:#ffffff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 40px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);line-height:1.05;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.lede{color:var(--muted);max-width:62ch;margin:10px 0 0}
+.top{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
+.seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.seg button:focus-visible,input:focus-visible,.rank button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.figs{display:flex;flex-wrap:wrap;gap:12px 28px;margin:22px 0 0}
+.fig b{display:block;font-family:var(--display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.fig span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:24px;margin-top:22px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+#map{width:100%;height:auto;display:block}
+.maphead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:6px}
+#maptitle{flex:1 1 240px;min-width:0}
+.maphead .t{font-family:var(--display);font-weight:700;font-size:17px}
+.maphead .h{color:var(--muted);font-size:13px}
+.back{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 14px;cursor:pointer}
+.back:hover{border-color:var(--accent);color:var(--accent)}
+.back:focus-visible,.list li.click:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#map path{vector-effect:non-scaling-stroke}
+#map path.dim{opacity:.3}
+#map path.com{stroke:var(--stroke);stroke-width:.5;cursor:pointer}
+#map path.com:hover{stroke:var(--hover);stroke-width:1.5}
+#map path.com.hl{stroke:var(--mark);stroke-width:3}
+[hidden]{display:none!important}
+.bud-cities{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.bc-t{margin:6px 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.cchip{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer;font-variant-numeric:tabular-nums}
+.cchip b{font-weight:600;margin-left:4px}
+.cchip:hover{border-color:var(--accent)}
+.cchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cmp-in{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.ac{position:relative;min-width:0}
+.ac input{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.ac input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.acl{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:4}
+.acl button{all:unset;display:block;width:100%;box-sizing:border-box;padding:7px 9px;border-radius:6px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acl button span{color:var(--muted);font-size:12px}
+.acl button:hover,.acl button:focus-visible{background:var(--accent-soft)}
+.cmp-lead{margin:12px 0 8px;font-size:14px;color:var(--muted)}
+.cmp-lead b{color:var(--fg)}
+.cmp table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.cmp th{text-align:right;font-family:var(--display);font-size:15px;padding:4px 0 6px 10px;vertical-align:bottom;overflow-wrap:anywhere}
+.cmp th small,.cmp td small{display:block;font-family:var(--body);font-size:12px;font-weight:400;color:var(--muted)}
+.cmp td{text-align:right;padding:6px 0 6px 10px;border-top:1px solid var(--line);vertical-align:top}
+.cmp td:first-child,.cmp th:first-child{text-align:left;padding-left:0}
+.cmp td b{font-weight:600;font-size:15px;white-space:nowrap}
+.cmp tr.act td{border-top:0;padding-top:8px}
+.lnk{all:unset;cursor:pointer;color:var(--accent);font-size:13px}
+.lnk:hover{text-decoration:underline}
+.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mapwrap{position:relative}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+#map{position:relative}
+#map path.mini{pointer-events:none;stroke:none}
+.budget{margin-top:22px}
+.bud-row{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end}
+.bud-f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.bud-main{flex:1 1 260px}
+.bud-amount{display:flex;align-items:baseline;gap:6px}
+.bud-amount input{font-family:var(--display);font-weight:700;font-size:28px;width:5.2ch;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--fg);padding:0 2px;font-variant-numeric:tabular-nums}
+.bud-amount input:focus{outline:none;border-bottom-color:var(--accent)}
+.bud-amount span{font-family:var(--display);font-size:22px;font-weight:700;color:var(--muted)}
+#bud-r{width:100%;accent-color:var(--accent)}
+#bud-t button{padding:7px 12px}
+.btn{font:inherit;font-weight:600;border:0;background:var(--accent);color:var(--surface);border-radius:999px;padding:9px 18px;cursor:pointer}
+.btn:focus-visible,#bud-r:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bud-sum{margin:14px 0 0;color:var(--muted);max-width:90ch}
+.bud-sum b{color:var(--fg)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline;box-shadow:0 0 0 1px var(--line)}
+.dot.st0{background:var(--ok)} .dot.st1{background:var(--close)} .dot.st2{background:var(--over)}
+.legend .li{display:inline-flex;align-items:center;margin-right:18px;font-size:13px;color:var(--fg)}
+.tip .bl{margin-top:6px;font-size:13px;font-weight:600}
+#map .cities{pointer-events:none}
+.top5{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+.top5-t{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tw{overflow-x:auto}
+.top5 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.top5 th{font-weight:500;color:var(--muted);font-size:12px;text-align:right;padding:2px 0 6px 12px;vertical-align:bottom}
+.top5 th:first-child{text-align:left;padding-left:0}
+.top5 th small,.top5 td small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.top5 td{text-align:right;padding:6px 0 6px 12px;border-top:1px solid var(--line);vertical-align:top}
+.top5 td:first-child{text-align:left;padding-left:0}
+.top5 td .n{font-weight:600}
+.top5 td b{font-weight:600;font-size:15px}
+.top5 tr[data-c]{cursor:pointer}
+.top5 tr[data-c]:hover .n,.top5 tr.on .n{color:var(--accent)}
+.top5 tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+@media (max-width:560px){.top5{padding:10px}.top5 td small.m2{display:none}.top5 th,.top5 td{padding-left:8px}.top5 td b{font-size:14px;white-space:nowrap}}
+.tip .tm{display:grid;grid-template-columns:auto auto;gap:1px 12px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);font-size:12px}
+.tip .tm span{color:var(--muted)}
+.tip .tm b{font-family:var(--body);font-size:13px;text-align:right}
+#map .cities circle{fill:var(--surface);stroke:var(--fg);stroke-width:1.3}
+#map .cities text{fill:var(--fg);font-family:var(--body);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+#map path.outline{fill:none;stroke:var(--fg);stroke-width:1.5;pointer-events:none}
+.list li.click{cursor:pointer}
+.list li.click:hover .n{color:var(--accent)}
+.list li.on .n{color:var(--accent);font-weight:600}
+#map path.dep{stroke:var(--stroke);stroke-width:.7;cursor:pointer;transition:opacity .15s}
+#map path.dep:hover,#map path.dep.sel{stroke:var(--hover);stroke-width:1.6}
+.drom{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px}
+.drom figure{margin:0;text-align:center}
+.drom figcaption{font-size:12px;color:var(--muted)}
+.drom svg{width:100%;height:70px;display:block}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 0;margin-top:14px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.legend .sw{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 0;min-width:38px}
+.legend .sw i{display:block;height:12px;width:100%;border-right:2px solid var(--surface)}
+.legend .unit{flex-basis:100%;margin-bottom:4px}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.14);z-index:5;min-width:170px}
+.tip b{font-family:var(--display);font-size:15px}
+.tip .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.tip .s{color:var(--muted)}
+h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
+.lab{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+#q{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.list{list-style:none;margin:10px 0 0;padding:0}
+.list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 14px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.list li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list li .d{color:var(--muted);font-size:12px}
+.list li .x{font-weight:600;text-align:right;min-width:62px}
+.list li.h{border-top:0;color:var(--muted);font-size:12px;padding-bottom:2px}
+.panel{display:flex;flex-direction:column;gap:22px}
+.rank{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:420px){.rank{grid-template-columns:1fr}}
+.rank ol{list-style:none;margin:0;padding:0;font-variant-numeric:tabular-nums}
+.rank li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid var(--line);font-size:14px}
+.rank li button{all:unset;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank li button:hover{color:var(--accent);text-decoration:underline}
+.rank h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+.empty{color:var(--muted);font-size:14px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;margin-top:26px;max-width:80ch}
+.note a{color:var(--accent)}
+.chip{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Loyers au m² en France</h1>
+      <p class="lede">Loyer mensuel charges comprises, en euros par m², estimé à partir des annonces de location. Chaque département montre la moyenne de ses communes, pondérée par leur population.</p>
+    </div>
+    <div class="seg" id="k-seg" role="group" aria-label="Type de logement">
+      <button id="bt-a" aria-pressed="true" data-k="a">Appartement</button>
+      <button id="bt-m" aria-pressed="false" data-k="m">Maison</button>
+    </div>
+  </div>
+
+  <div class="figs" id="figs"></div>
+
+  <section class="card budget" id="budget" aria-labelledby="bud-h">
+    <div class="bud-row">
+      <div class="bud-f bud-main">
+        <label class="lab" id="bud-h" for="bud-v">Mon budget par mois</label>
+        <div class="bud-amount"><input id="bud-v" type="number" inputmode="numeric" min="100" max="10000" step="10" value="550"><span>€</span></div>
+        <input id="bud-r" type="range" min="200" max="2500" step="10" value="550" aria-label="Budget par mois">
+      </div>
+      <div class="bud-f">
+        <span class="lab">Logement</span>
+        <div class="seg" id="bud-t" role="group" aria-label="Logement pour le budget">
+          <button data-t="a12" aria-pressed="true">1 ou 2 pièces</button><button data-t="a3" aria-pressed="false">3 pièces et +</button><button data-t="m" aria-pressed="false">Maison</button>
+        </div>
+      </div>
+      <div class="bud-f bud-act">
+        <button class="btn" id="bud-on">Voir sur la carte</button>
+        <button class="back" id="bud-off" hidden>Revenir aux loyers au m²</button>
+      </div>
+    </div>
+    <p class="bud-sum" id="bud-sum"></p>
+    <div class="bud-cities" id="bud-cities" hidden></div>
+  </section>
+
+  <div class="grid">
+    <div class="card" id="mapcard">
+      <div class="maphead">
+        <span id="maptitle"><span class="h">Cliquez sur un département pour voir ses communes.</span></span>
+        <button class="back" id="back-fr" hidden>← France entière</button>
+      </div>
+      <div class="top5" id="top5" hidden></div>
+      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer au m²"></svg></div>
+      <div class="drom" id="drom"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="panel">
+      <div class="card cmp" id="cmp">
+        <h2>Comparer deux communes</h2>
+        <div class="cmp-in">
+          <div class="ac"><label class="lab" for="cmp-a">Commune 1</label><input id="cmp-a" type="search" autocomplete="off" placeholder="Ex. Bordeaux"><ul class="acl" id="cmp-a-l" hidden></ul></div>
+          <div class="ac"><label class="lab" for="cmp-b">Commune 2</label><input id="cmp-b" type="search" autocomplete="off" placeholder="Ex. Montpellier"><ul class="acl" id="cmp-b-l" hidden></ul></div>
+        </div>
+        <div class="tw" id="cmp-t"></div>
+      </div>
+      <div class="card">
+        <label class="lab" for="q">Chercher une commune</label>
+        <input id="q" type="search" placeholder="Ex. Rouen, Nantes, Lyon 3e…" autocomplete="off">
+        <ul class="list" id="res"></ul>
+      </div>
+      <div class="card" id="detail">
+        <h2 id="d-title">Classement des départements</h2>
+        <div class="rank" id="rank"></div>
+        <ul class="list" id="d-list" hidden></ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" id="note"></p>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = __DATA__;
+const GEO = __GEO__;
+const COMGEO = __COMGEO__;
+// Villes de plus de 100 000 habitants : [nom, dep, lon, lat, population]
+const VILLES = __VILLES__;
+
+const REF = {a:52, m:92};
+const LABEL = {a:"appartement", m:"maison"};
+const BREAKS = [9,10,11,12.5,14,17,21,25,30];
+const W = 640, H = 620;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const colors = () => [0,1,2,3,4,5,6,7,8,9].map(i => getComputedStyle(document.documentElement).getPropertyValue('--c'+i).trim());
+let K = "a", selDep = null, zoomed = null, hlCode = null;
+
+const fmt = v => v == null ? "—" : v.toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1}) + " €";
+const month = v => (Math.round(v*REF[K]/10)*10).toLocaleString("fr-FR") + "\u00a0€/mois";
+const refTxt = () => `${K === "m" ? "une maison" : "un appartement"} de ${REF[K]}\u00a0m²`;
+let PAL = colors();
+const color = v => { if (v == null) return "var(--line)"; let i = BREAKS.findIndex(b => v < b); if (i < 0) i = BREAKS.length; return PAL[i]; };
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[-']/g," ").replace(/\barrondissement\b/,"").replace(/\s+/g," ").trim();
+
+// Communes : [code, nom, dep, appart, maison, population]
+const COMS = DATA.coms.map(c => ({c:c[0], n:c[1].replace(/ (\d+)(er|e) Arrondissement$/, " $1$2"), d:c[2], a:c[3], m:c[4], p:c[5], a12:c[6], a3:c[7]}));
+const COMBY = {};
+COMS.forEach(c => { c.k = norm(c.n); COMBY[c.c] = c; });
+
+// Contours des communes : décodage à la demande, par département
+const comCache = {};
+function comFeatures(dep){
+  if (comCache[dep]) return comCache[dep];
+  const feats = (COMGEO[dep] || []).map(([code, enc]) => {
+    const polys = enc.map(poly => {
+      const rings = poly.map(flat => { const r = []; let x = 0, y = 0;
+        for (let i = 0; i < flat.length; i += 2){ x += flat[i]; y += flat[i+1]; r.push([x/1000, y/1000]); } return r; });
+      return d3.geoArea({type:"Polygon", coordinates:rings}) > 2*Math.PI ? rings.map(r => r.reverse()) : rings;
+    });
+    return {type:"Feature", properties:{c:code}, geometry:{type:"MultiPolygon", coordinates:polys}};
+  });
+  return comCache[dep] = feats;
+}
+
+// --- Carte métropole
+const svg = d3.select("#map");
+const metro = {type:"FeatureCollection", features: GEO.features.filter(f => f.properties.c.length < 3)};
+const proj = d3.geoConicConformal().parallels([44,49]).rotate([-3,0]).fitExtent([[8,8],[W-8,H-8]], metro);
+const path = d3.geoPath(proj);
+const gRoot = svg.append("g");
+const gDeps = gRoot.append("g");
+const gComs = gRoot.append("g");
+const gLine = gRoot.append("g");
+const gOm = svg.append("g").attr("display","none");
+const gCity = svg.append("g").attr("class","cities");
+
+// --- Noms des grandes villes, placés sans chevauchement (les plus peuplées d'abord)
+let view = {p: proj, k: 1, tx: 0, ty: 0, om: false};
+function drawCities(){
+  gCity.selectAll("*").remove();
+  const s = (svg.node().clientWidth || W) / W;
+  const fs = Math.max(11, 10.5 / s), r = Math.max(2.6, 2.4 / s);
+  const boxes = view.k === 1 && !view.om ? [{x:10, y:10, w:150, h:128}] : [], keep = [];
+  const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+  // Nom et prix écrits dans les communes assez grandes à l'écran (arrondissements de Paris, par exemple)
+  const clabs = [];
+  if (zoomed && !view.om){
+    const items = gComs.selectAll("path.com").data().map(f => {
+      const [[x0,y0],[x1,y1]] = path.bounds(f);
+      return {f, bw: (x1-x0)*view.k, bh: (y1-y0)*view.k};
+    }).sort((a,b) => b.bw*b.bh - a.bw*a.bh);
+    for (const {f, bw, bh} of items){
+      const c = COMBY[f.properties.c]; if (!c) continue;
+      const m = c.n.match(/^(?:Paris|Lyon|Marseille) (\d+(?:er|e))$/);
+      const name = m ? m[1] : c.n;
+      const val = BUD.on ? eur(c[BUD.t], SURF[BUD.t]) : fmt(c[K]);
+      const w = Math.max(name.length, val.length) * fs * 0.56 + 6, h = fs * 2.3;
+      if (w > bw * 0.9 || h > bh * 0.8) continue;
+      const [cx, cy] = path.centroid(f), x = view.tx + view.k*cx, y = view.ty + view.k*cy;
+      const box = {x: x - w/2, y: y - h/2, w, h};
+      if (hit(box) || box.x < 0 || box.x + w > W || box.y < 0 || box.y + h > H) continue;
+      boxes.push(box); clabs.push({x, y, name, val});
+    }
+  }
+  for (const [n, d, lon, lat] of VILLES){
+    if ((d.length === 3) !== view.om) continue;
+    if (view.om && d !== zoomed) continue;
+    if (view.k === 1 && ["92","93","94"].includes(d)) continue;
+    const pt = view.p([lon, lat]); if (!pt) continue;
+    const x = view.tx + view.k * pt[0], y = view.ty + view.k * pt[1];
+    if (x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
+    const w = n.length * fs * 0.56 + 4, h = fs * 1.15;
+    const right = {x: x + r + 3, y: y - h/2, w, h}, left = {x: x - r - 3 - w, y: y - h/2, w, h};
+    const dot = {x: x - r, y: y - r, w: 2*r, h: 2*r};
+    const above = {x: x - w/2, y: y - r - 2 - h, w, h}, below = {x: x - w/2, y: y + r + 2, w, h};
+    const fits = b => !hit(b) && b.x > 0 && b.x + b.w < W && b.y > 0 && b.y + b.h < H;
+    const lab = [right, left, above, below].find(fits) || null;
+    if (clabs.some(l => l.name === n)) continue;
+    if (!lab && ((view.k === 1 && !view.om) || hit(dot))) continue;
+    boxes.push(dot); if (lab) boxes.push(lab);
+    keep.push({n, x, y, lab});
+  }
+  const g = gCity.selectAll("g").data(keep).join("g");
+  g.append("circle").attr("cx", c => c.x).attr("cy", c => c.y).attr("r", r);
+  const side = c => c.lab.x > c.x ? "r" : c.lab.x + c.lab.w < c.x ? "l" : "c";
+  g.filter(c => c.lab).append("text")
+    .attr("x", c => ({r: c.lab.x, l: c.lab.x + c.lab.w - 2, c: c.x})[side(c)])
+    .attr("y", c => c.lab.y + c.lab.h/2).attr("dy", "0.35em").attr("font-size", fs)
+    .attr("text-anchor", c => ({r:"start", l:"end", c:"middle"})[side(c)]).text(c => c.n);
+  const tl = gCity.append("g").selectAll("text").data(clabs).join("text")
+    .attr("x", d => d.x).attr("y", d => d.y).attr("font-size", fs).attr("text-anchor","middle");
+  tl.append("tspan").attr("x", d => d.x).attr("dy","-0.2em").attr("font-weight",700).text(d => d.name);
+  tl.append("tspan").attr("x", d => d.x).attr("dy","1.15em").attr("font-weight",500).text(d => d.val);
+}
+addEventListener("resize", () => drawCities());
+gDeps.selectAll("path").data(metro.features).join("path").attr("class","dep").attr("d", path);
+
+// --- Zoom Paris et petite couronne
+const IDF = {type:"FeatureCollection", features: metro.features.filter(f => ["75","92","93","94"].includes(f.properties.c))};
+const zg = svg.append("g").attr("transform","translate(10,10)");
+zg.append("rect").attr("width",150).attr("height",128).attr("rx",6).attr("fill","var(--surface)").attr("stroke","var(--line)");
+const zp = d3.geoPath(d3.geoConicConformal().parallels([44,49]).rotate([-3,0]).fitExtent([[8,8],[142,108]], IDF));
+zg.append("g").selectAll("path").data(IDF.features).join("path").attr("class","dep").attr("d", zp);
+const gInsetComs = zg.append("g");
+zg.append("text").attr("x",75).attr("y",122).attr("text-anchor","middle").attr("font-size",10).attr("fill","var(--muted)").text("Paris et petite couronne");
+
+// --- Outre-mer
+const DROM = [["971","Guadeloupe"],["972","Martinique"],["973","Guyane"],["974","La Réunion"]];
+const dromLayers = [];
+DROM.forEach(([c,n]) => {
+  const f = GEO.features.find(x => x.properties.c === c); if (!f) return;
+  const fig = d3.select("#drom").append("figure");
+  const s = fig.append("svg").attr("viewBox","0 0 140 70");
+  const p = d3.geoPath(d3.geoMercator().fitExtent([[6,4],[134,66]], f));
+  s.append("path").datum(f).attr("class","dep").attr("d", p);
+  dromLayers.push({c, g: s.append("g"), p});
+  fig.append("figcaption").text(n);
+});
+const allDeps = () => d3.selectAll("path.dep");
+
+// --- Infobulle
+const tip = document.getElementById("tip");
+// Loyers par mois des trois logements types de la source
+const TYPES = [["a12","1 ou 2 pièces",37],["a3","3 pièces et +",72],["m","Maison",92]];
+const eur = (v, surf) => v == null ? "—" : (Math.round(v*surf/10)*10).toLocaleString("fr-FR") + "\u00a0€";
+// --- Filtre « mon budget »
+const SURF = {a12:37, a3:72, m:92};
+const PHRASE = {a12:"un 1 ou 2 pièces", a3:"un 3 pièces ou plus", m:"une maison"};
+const BUD = {on:false, t:"a12", v:550};
+// Comparaison sur le loyer arrondi à 10 €, celui qui est affiché
+const budState = vm2 => { if (vm2 == null) return null; const r = Math.round(vm2*SURF[BUD.t]/10)*10; return r <= BUD.v ? 0 : r <= BUD.v*1.1 ? 1 : 2; };
+const BUD_LAB = ["Dans ton budget","Un peu au-dessus","Hors budget"];
+const budCol = st => st == null ? "var(--line)" : ["var(--ok)","var(--close)","var(--over)"][st];
+const comFill = code => { const c = COMBY[code]; return BUD.on ? budCol(budState(c && c[BUD.t])) : color(c && c[K]); };
+function budStats(dep){
+  let n = 0, ok = 0, pop = 0, popOk = 0;
+  for (const c of COMS){
+    if (dep && c.d !== dep) continue;
+    const st = budState(c[BUD.t]); if (st == null) continue;
+    n++; pop += c.p; if (st === 0){ ok++; popOk += c.p; }
+  }
+  return {n, ok, pop, popOk};
+}
+function budLine(o){
+  if (!BUD.on || o[BUD.t] == null) return "";
+  const st = budState(o[BUD.t]), diff = Math.round((o[BUD.t]*SURF[BUD.t]/BUD.v - 1)*100);
+  return `<div class="bl"><i class="dot st${st}"></i>${BUD_LAB[st]}${st ? ` (+${diff} %)` : ""}</div>`;
+}
+function tipHtml(title, sub, o){
+  return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>
+    <div class="s">${K==="a"?"Maison":"Appartement"} : ${fmt(o[K==="a"?"m":"a"])}/m²</div>
+    <div class="tm">${TYPES.map(([k,l,sf]) => `<span>${l} (${sf}\u00a0m²)</span><b>≈ ${eur(o[k], sf)}</b>`).join("")}</div>${budLine(o)}`;
+}
+function showDepTip(ev, code){
+  const d = DATA.deps[code]; if (!d) return;
+  const bs = BUD.on ? budStats(code) : null;
+  tip.innerHTML = tipHtml(d.n, code, d).replace(/<div class="bl">.*<\/div>$/s, "") + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "") + (zoomed === code ? "" : `<div class="s" style="margin-top:4px">Cliquez pour voir les communes</div>`);
+  tip.hidden = false; moveTip(ev);
+}
+function showComTip(ev, code){
+  const c = COMBY[code]; if (!c) return;
+  tip.innerHTML = tipHtml(c.n, c.d, c);
+  tip.hidden = false; moveTip(ev);
+}
+function moveTip(ev){
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
+  tip.style.left = Math.max(8,x) + "px"; tip.style.top = Math.max(8,y) + "px";
+}
+allDeps()
+  .on("mouseenter", (ev,f) => showDepTip(ev, f.properties.c))
+  .on("mousemove", moveTip)
+  .on("mouseleave", () => tip.hidden = true)
+  .on("click", (ev,f) => zoomTo(f.properties.c));
+
+// --- Les 5 villes les plus peuplées d'un département (arrondissements de Paris, Lyon, Marseille regroupés)
+function topCities(dep){
+  const KEYS = ["a","m","a12","a3"], groups = {};
+  for (const c of COMS.filter(c => c.d === dep)){
+    const m = c.n.match(/^(Paris|Lyon|Marseille) \d/);
+    const id = m ? m[1] : c.c;
+    const g = groups[id] || (groups[id] = {n: m ? m[1] : c.n, c: m ? null : c.c, p: 0, s: {}, w: {}});
+    g.p += c.p;
+    for (const k of KEYS) if (c[k] != null){ g.s[k] = (g.s[k] || 0) + c[k]*c.p; g.w[k] = (g.w[k] || 0) + c.p; }
+  }
+  return Object.values(groups).sort((x,y) => y.p - x.p).slice(0,5).map(g => {
+    const o = {n: g.n, c: g.c, p: g.p};
+    for (const k of KEYS) o[k] = g.w[k] ? g.s[k]/g.w[k] : null;
+    return o;
+  });
+}
+function drawTop5(){
+  const box = document.getElementById("top5");
+  if (!zoomed){ box.hidden = true; return; }
+  const d = DATA.deps[zoomed];
+  mapTitle.innerHTML = `<span class="t">${d.n}</span> <span class="h">· ${mapTitle.dataset.n} communes</span><br><span class="h">Loyer moyen du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")} par mois</span>`;
+  const hab = p => p.toLocaleString("fr-FR") + " hab.";
+  box.innerHTML = `<p class="top5-t">Les 5 villes les plus peuplées · loyer par mois, charges comprises</p>
+    <div class="tw"><table><thead><tr><th>Ville</th>${TYPES.map(([k,l,sf]) => `<th>${l}<small>${sf}\u00a0m²</small></th>`).join("")}</tr></thead><tbody>` +
+    topCities(zoomed).map((g,i) => `<tr${g.c ? ` data-c="${g.c}" tabindex="0"` : ""}>
+      <td><span class="n">${i+1}. ${g.n}</span><small>${hab(g.p)}</small></td>` +
+      TYPES.map(([k,l,sf]) => `<td><b>${BUD.on && k === BUD.t && g[k] != null ? `<i class="dot st${budState(g[k])}"></i>` : ""}${eur(g[k], sf)}</b><small class="m2">${fmt(g[k])}/m²</small></td>`).join("") + `</tr>`).join("") +
+    `</tbody></table></div>`;
+  box.hidden = false;
+  box.querySelectorAll("tr[data-c]").forEach(tr => {
+    tr.onclick = () => highlight(tr.dataset.c);
+    tr.onkeydown = e => { if (e.key === "Enter") tr.onclick(); };
+  });
+}
+
+// --- Zoom sur un département
+const backBtn = document.getElementById("back-fr");
+const mapTitle = document.getElementById("maptitle");
+const HINT = mapTitle.innerHTML;
+backBtn.onclick = () => zoomOut();
+
+function comPaths(g, feats, gen){
+  return g.selectAll("path").data(feats, f => f.properties.c).join("path")
+    .attr("class","com").attr("d", gen)
+    .on("mouseenter", (ev,f) => showComTip(ev, f.properties.c))
+    .on("mousemove", moveTip)
+    .on("mouseleave", () => tip.hidden = true)
+    .on("click", (ev,f) => highlight(f.properties.c));
+}
+
+function zoomTo(code, hl = null){
+  tip.hidden = true;
+  const d = DATA.deps[code]; if (!d) return;
+  zoomed = code;
+  const feats = comFeatures(code);
+  zg.attr("display","none");
+  backBtn.hidden = false;
+  mapTitle.dataset.n = feats.length;
+  if (code.length === 3){
+    gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
+    gRoot.attr("display","none"); gOm.attr("display",null);
+    const p = d3.geoPath(d3.geoMercator().fitExtent([[20,20],[W-20,H-20]], {type:"FeatureCollection", features:feats}));
+    comPaths(gOm, feats, p);
+    view = {p: p.projection(), k: 1, tx: 0, ty: 0, om: true}; drawCities();
+  } else {
+    gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
+    const f = metro.features.find(x => x.properties.c === code);
+    const [[x0,y0],[x1,y1]] = path.bounds(f);
+    const k = Math.min(60, 0.92 / Math.max((x1-x0)/W, (y1-y0)/H));
+    const tx = W/2 - k*(x0+x1)/2, ty = H/2 - k*(y0+y1)/2;
+    gDeps.selectAll("path").classed("dim", x => x.properties.c !== code);
+    comPaths(gComs, feats, path);
+    gComs.attr("opacity", reduceMotion ? 1 : 0);
+    view = {p: proj, k, tx, ty, om: false};
+    gCity.selectAll("*").remove();
+    gRoot.transition().duration(reduceMotion ? 0 : 750).ease(d3.easeCubicInOut)
+      .attr("transform", `translate(${tx},${ty}) scale(${k})`).on("end", drawCities);
+    if (!reduceMotion) gComs.transition().delay(350).duration(400).attr("opacity", 1);
+  }
+  paintDeps(); paintComs(); drawCanvas(); drawBudSum();
+  drawTop5();
+  selectDep(code);
+  highlight(hl);
+}
+
+function zoomOut(){
+  tip.hidden = true; zoomed = null; hlCode = null;
+  gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
+  gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
+  gDeps.selectAll("path").classed("dim", false);
+  view = {p: proj, k: 1, tx: 0, ty: 0, om: false};
+  gCity.selectAll("*").remove();
+  gRoot.transition().duration(reduceMotion ? 0 : 600).ease(d3.easeCubicInOut).attr("transform","translate(0,0) scale(1)").on("end", () => { drawCities(); paintDeps(); drawCanvas(); });
+  zg.attr("display",null);
+  backBtn.hidden = true; mapTitle.innerHTML = HINT;
+  drawTop5(); drawBudSum();
+  selectDep(null);
+}
+
+function paintComs(){
+  d3.selectAll("path.com").attr("fill", f => comFill(f.properties.c));
+}
+function paintDeps(){
+  allDeps().attr("fill", f => {
+    if (BUD.on) return zoomed ? "var(--line)" : "transparent";
+    const d = DATA.deps[f.properties.c]; return d ? color(d[K]) : "var(--line)";
+  });
+}
+
+// Communes de toute la métropole, dessinées sur un canevas en mode budget
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let P2D = null;
+function drawCanvas(){
+  const show = BUD.on && !zoomed;
+  cv.hidden = !show; if (!show) return;
+  if (!P2D){ P2D = []; for (const d of Object.keys(COMGEO)) if (d.length < 3) for (const f of comFeatures(d)) P2D.push({c: f.properties.c, p: new Path2D(path(f))}); }
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  if (cv.width !== W*dpr){ cv.width = W*dpr; cv.height = H*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  const cs = getComputedStyle(document.documentElement);
+  const cols = ["--ok","--close","--over","--line"].map(v => cs.getPropertyValue(v).trim());
+  const groups = [[],[],[],[]];
+  for (const x of P2D){ const c = COMBY[x.c]; const st = budState(c && c[BUD.t]); groups[st == null ? 3 : st].push(x.p); }
+  groups.forEach((g,i) => { ctx.fillStyle = cols[i]; for (const p of g) ctx.fill(p); });
+}
+function drawMiniComs(){
+  gInsetComs.selectAll("*").remove(); dromLayers.forEach(x => x.g.selectAll("*").remove());
+  if (!BUD.on) return;
+  gInsetComs.selectAll("path").data(["75","92","93","94"].flatMap(comFeatures)).join("path")
+    .attr("class","mini").attr("d", zp).attr("fill", f => comFill(f.properties.c));
+  dromLayers.forEach(x => x.g.selectAll("path").data(comFeatures(x.c)).join("path")
+    .attr("class","mini").attr("d", x.p).attr("fill", f => comFill(f.properties.c)));
+}
+// Grandes villes (plus de 100 000 habitants) rangées par loyer pour le logement choisi
+let CITYOBJ = null;
+function drawBudCities(){
+  const el = document.getElementById("bud-cities");
+  if (!BUD.on){ el.hidden = true; return; }
+  if (!CITYOBJ) CITYOBJ = VILLES.map(([n,d]) => cmpPool().find(c => (c.s || c.n) === n && c.d === d)).filter(Boolean);
+  const sf = SURF[BUD.t];
+  const rows = CITYOBJ.filter(c => c[BUD.t] != null).map(c => ({c, st: budState(c[BUD.t]), r: c[BUD.t]*sf})).sort((a,b) => a.r - b.r);
+  const chip = x => `<button class="cchip" data-i="${CITYOBJ.indexOf(x.c)}"><i class="dot st${x.st}"></i>${x.c.s || x.c.n} <b>${eur(x.c[BUD.t], sf)}</b></button>`;
+  const ok = rows.filter(x => x.st === 0), close = rows.filter(x => x.st === 1);
+  let html = `<p class="bc-t">Grandes villes de plus de 100 000 habitants dans ton budget · ${ok.length} sur ${rows.length}</p>`;
+  html += ok.length ? `<div class="chips">${ok.map(chip).join("")}</div>`
+    : `<p class="empty">Aucune grande ville ne rentre dans ce budget. La moins chère est ${rows[0].c.s || rows[0].c.n}, à ${eur(rows[0].c[BUD.t], sf)} par mois.</p>`;
+  if (close.length) html += `<p class="bc-t">Un peu au-dessus</p><div class="chips">${close.map(chip).join("")}</div>`;
+  el.innerHTML = html; el.hidden = false;
+  el.querySelectorAll(".cchip").forEach(b => b.onclick = () => { const c = CITYOBJ[+b.dataset.i]; zoomTo(c.d, c.c); showMap(); });
+}
+function drawBudSum(){
+  drawBudCities();
+  const el = document.getElementById("bud-sum");
+  if (!BUD.on){ el.innerHTML = `Choisis un montant et un logement : la carte montre en vert les communes où le loyer type rentre dans ton budget.`; return; }
+  const s = budStats(null), nf = x => x.toLocaleString("fr-FR");
+  let txt = `Avec <b>${nf(BUD.v)} € par mois</b> pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m² : <b>${nf(s.ok)} communes sur ${nf(s.n)}</b> sont dans ton budget. Elles regroupent ${Math.round(100*s.popOk/s.pop)} % des habitants.`;
+  if (zoomed){ const z = budStats(zoomed); txt += ` <b>${DATA.deps[zoomed].n} : ${nf(z.ok)} sur ${nf(z.n)}.</b>`; }
+  el.innerHTML = txt;
+}
+function applyBudget(){
+  document.getElementById("bud-on").hidden = BUD.on;
+  document.getElementById("bud-off").hidden = !BUD.on;
+  paintDeps(); paintComs(); drawMiniComs(); drawCanvas(); drawLegend(); drawBudSum(); drawTop5(); drawCmp(); drawCities();
+}
+const budV = document.getElementById("bud-v"), budR = document.getElementById("bud-r");
+let budTimer;
+const budChanged = () => { BUD.on = true; clearTimeout(budTimer); budTimer = setTimeout(applyBudget, 80); };
+budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = +budR.value; budChanged(); });
+budV.addEventListener("input", () => { const v = +budV.value; if (v >= 100 && v <= 10000){ BUD.v = v; budR.value = Math.min(+budR.max, v); budChanged(); } });
+document.querySelectorAll("#bud-t button").forEach(b => b.onclick = () => {
+  BUD.t = b.dataset.t;
+  document.querySelectorAll("#bud-t button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  budChanged();
+});
+document.getElementById("bud-on").onclick = () => { BUD.on = true; applyBudget(); };
+document.getElementById("bud-off").onclick = () => { BUD.on = false; applyBudget(); };
+
+function highlight(code){
+  hlCode = code;
+  d3.selectAll("path.com").classed("hl", f => f.properties.c === code);
+  if (code) d3.selectAll("path.com.hl").raise();
+  document.querySelectorAll("#d-list li[data-c], #top5 tr[data-c]").forEach(li => li.classList.toggle("on", li.dataset.c === code));
+}
+
+// --- Légende
+function drawLegend(){
+  if (BUD.on){
+    const v = BUD.v, nf = x => x.toLocaleString("fr-FR");
+    document.getElementById("legend").innerHTML = `<span class="unit">Loyer par mois pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m², charges comprises</span>
+      <span class="li"><i class="dot st0"></i>${BUD_LAB[0]} (jusqu'à ${nf(v)} €)</span>
+      <span class="li"><i class="dot st1"></i>${BUD_LAB[1]} (jusqu'à ${nf(Math.round(v*1.1))} €)</span>
+      <span class="li"><i class="dot st2"></i>${BUD_LAB[2]}</span>`;
+    return;
+  }
+  const labels = ["< 9", ...BREAKS.map(b => String(b).replace(".",",")+(b===30?" et +":""))];
+  document.getElementById("legend").innerHTML = `<span class="unit">€ par m² et par mois, charges comprises (chaque case part de la valeur indiquée)</span>` +
+    PAL.map((col,i)=>`<div class="sw"><i style="background:${col}"></i>${labels[i]}</div>`).join("");
+}
+
+// --- Chiffres clés
+function drawFigs(){
+  const ds = Object.entries(DATA.deps).sort((x,y)=>y[1][K]-x[1][K]);
+  const top = ds[0], low = ds[ds.length-1];
+  document.getElementById("figs").innerHTML = `
+    <div class="fig"><b>${fmt(DATA.fr[K])}</b><span>Moyenne France · ${LABEL[K]}</span></div>
+    <div class="fig"><b>≈ ${month(DATA.fr[K])}</b><span>Loyer moyen · ${LABEL[K]} de ${REF[K]} m²</span></div>
+    <div class="fig"><b>${fmt(top[1][K])}</b><span>Le plus cher · ${top[1].n}</span></div>
+    <div class="fig"><b>${fmt(low[1][K])}</b><span>Le moins cher · ${low[1].n}</span></div>`;
+}
+
+// --- Classement
+function drawRank(){
+  const ds = Object.entries(DATA.deps).sort((x,y)=>y[1][K]-x[1][K]);
+  const li = ([c,d]) => `<li><button data-c="${c}">${d.n}</button><span>${fmt(d[K])}</span></li>`;
+  document.getElementById("rank").innerHTML =
+    `<div><h3>Les 10 plus chers</h3><ol>${ds.slice(0,10).map(li).join("")}</ol></div>
+     <div><h3>Les 10 moins chers</h3><ol>${ds.slice(-10).reverse().map(li).join("")}</ol></div>`;
+  document.querySelectorAll("#rank button").forEach(b => b.onclick = () => { zoomTo(b.dataset.c); showMap(); });
+}
+
+// --- Détail d'un département (panneau)
+function selectDep(code){
+  selDep = code;
+  const t = document.getElementById("d-title");
+  const list = document.getElementById("d-list");
+  const rank = document.getElementById("rank");
+  if (!code){ t.textContent = "Classement des départements"; list.hidden = true; rank.hidden = false; drawRank(); return; }
+  const d = DATA.deps[code];
+  rank.hidden = true; list.hidden = false;
+  t.innerHTML = `${d.n} <span style="color:var(--muted);font-weight:500">· ${fmt(d[K])}/m²</span>`;
+  const cs = COMS.filter(c => c.d === code).sort((x,y)=>y.p-x.p).slice(0,15);
+  list.innerHTML = `<li class="h"><span>Communes les plus peuplées</span><span>Appart.</span><span class="x">Maison</span></li>` +
+    cs.map(c => `<li class="click" data-c="${c.c}" tabindex="0"><span class="n">${c.n}</span><span>${fmt(c.a)}</span><span class="x">${fmt(c.m)}</span></li>`).join("") +
+    `<li><span class="n"><button id="back" style="all:unset;cursor:pointer;color:var(--accent)">← Revenir au classement</button></span><span></span><span></span></li>`;
+  list.querySelectorAll("li[data-c]").forEach(li => {
+    li.onclick = () => { highlight(li.dataset.c); showMap(); };
+    li.onkeydown = e => { if (e.key === "Enter") li.onclick(); };
+  });
+  document.getElementById("back").onclick = () => zoomOut();
+  if (hlCode) highlight(hlCode);
+}
+
+function showMap(){
+  const r = document.getElementById("mapcard").getBoundingClientRect();
+  if (r.top < 0 || r.top > innerHeight * 0.5) document.getElementById("mapcard").scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block:"start"});
+}
+
+// --- Recherche
+const q = document.getElementById("q"), res = document.getElementById("res");
+function search(){
+  const s = norm(q.value);
+  let head, hits;
+  if (s.length < 2){
+    head = "Les 5 plus grandes villes, pour exemple";
+    hits = COMS.filter(c=>!/^(Paris|Lyon|Marseille) \d/.test(c.n)).slice(0,5);
+  } else {
+    head = "Commune";
+    hits = COMS.filter(c => c.k.startsWith(s)).concat(COMS.filter(c => !c.k.startsWith(s) && c.k.includes(s))).slice(0,8);
+  }
+  res.innerHTML = hits.length ? `<li class="h" style="border:0"><span>${head}</span><span>Appart.</span><span class="x">Maison</span></li>` + hits.map(row).join("")
+    : `<li class="h" style="border:0"><span>Aucune commune trouvée. Vérifiez l'orthographe.</span></li>`;
+  res.querySelectorAll("li[data-c]").forEach(li => {
+    li.onclick = () => { const c = COMBY[li.dataset.c]; zoomTo(c.d, c.c); showMap(); };
+    li.onkeydown = e => { if (e.key === "Enter") li.onclick(); };
+  });
+}
+const row = c => `<li class="click" data-c="${c.c}" tabindex="0"><span class="n">${c.n} <span class="d">${c.d}</span></span><span>${fmt(c.a)}</span><span class="x">${fmt(c.m)}</span></li>`;
+q.addEventListener("input", search);
+
+// --- Rendu
+function render(){
+  PAL = colors();
+  paintDeps(); paintComs(); drawMiniComs(); drawCanvas(); drawFigs(); drawLegend(); drawTop5(); drawBudSum(); drawCities();
+  selectDep(selDep);
+}
+document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
+  K = b.dataset.k;
+  document.querySelectorAll("#k-seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+
+document.getElementById("note").innerHTML = `Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025. Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025. Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place. Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr). Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement. Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon. Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille). Mayotte n'est pas couverte.`;
+
+
+// --- Comparer deux communes
+let VIRT = null;
+function cmpPool(){
+  if (!VIRT){
+    VIRT = [["Paris","75"],["Lyon","69"],["Marseille","13"]].map(([n,d]) => {
+      const g = topCities(d).find(x => x.n === n);
+      return {...g, c: null, d, n: `${n} (toute la ville)`, s: n, sub: "toute la ville · ", k: norm(n)};
+    });
+  }
+  return VIRT.concat(COMS);
+}
+function findCom(s){
+  s = norm(s); if (s.length < 2) return [];
+  const pool = cmpPool();
+  return pool.filter(c => c.k.startsWith(s)).concat(pool.filter(c => !c.k.startsWith(s) && c.k.includes(s))).slice(0,6);
+}
+const CMP = [COMBY["33063"], COMBY["34172"]];
+function cmpDiff(a, b, sf){
+  if (a == null || b == null) return "";
+  const ea = Math.round(a*sf/10)*10, eb = Math.round(b*sf/10)*10, d = eb - ea, p = Math.round((b/a - 1)*100);
+  if (d === 0) return `<small>même loyer</small>`;
+  return `<small>${d > 0 ? "+" : "−"}${Math.abs(d).toLocaleString("fr-FR")} € (${p > 0 ? "+" : "−"}${Math.abs(p)} %)</small>`;
+}
+function drawCmp(){
+  const [A, B] = CMP, box = document.getElementById("cmp-t");
+  const nA = A && (A.s || A.n), nB = B && (B.s || B.n), dn = c => (c.sub || "") + (DATA.deps[c.d] ? DATA.deps[c.d].n : c.d);
+  if (!A || !B){ box.innerHTML = `<p class="empty">Choisis deux communes pour les comparer.</p>`; return; }
+  const k0 = BUD.on ? BUD.t : "a12", [ , l0, sf0] = TYPES.find(t => t[0] === k0);
+  let lead = "";
+  if (A[k0] != null && B[k0] != null){
+    const d = Math.round(B[k0]*sf0/10)*10 - Math.round(A[k0]*sf0/10)*10;
+    lead = d === 0 ? `Pour ${PHRASE[k0]}, le loyer est le même à ${nA} et à ${nB}.`
+      : `Pour ${PHRASE[k0]}, compte environ <b>${Math.abs(d).toLocaleString("fr-FR")} € de ${d > 0 ? "plus" : "moins"} par mois</b> à ${nB} qu'à ${nA}.`;
+  }
+  const dot = (c, k) => BUD.on && k === BUD.t && c[k] != null ? `<i class="dot st${budState(c[k])}"></i>` : "";
+  box.innerHTML = `<p class="cmp-lead">${lead}</p><table>
+    <thead><tr><th></th><th>${nA}<small>${dn(A)}</small></th><th>${nB}<small>${dn(B)}</small></th></tr></thead><tbody>` +
+    TYPES.map(([k,l,sf]) => `<tr><td>${l}<small>${sf} m², par mois</small></td><td><b>${dot(A,k)}${eur(A[k], sf)}</b></td><td><b>${dot(B,k)}${eur(B[k], sf)}</b>${cmpDiff(A[k], B[k], sf)}</td></tr>`).join("") +
+    `<tr><td>Appartement<small>prix au m²</small></td><td>${fmt(A.a)}</td><td>${fmt(B.a)}</td></tr>
+     <tr><td>Maison<small>prix au m²</small></td><td>${fmt(A.m)}</td><td>${fmt(B.m)}</td></tr>
+     <tr><td>Habitants</td><td>${A.p.toLocaleString("fr-FR")}</td><td>${B.p.toLocaleString("fr-FR")}</td></tr>
+     <tr class="act"><td></td><td><button class="lnk" data-i="0">Voir sur la carte</button></td><td><button class="lnk" data-i="1">Voir sur la carte</button></td></tr>
+    </tbody></table>`;
+  box.querySelectorAll("button[data-i]").forEach(b => b.onclick = () => { const c = CMP[+b.dataset.i]; zoomTo(c.d, c.c); showMap(); });
+}
+[0,1].forEach(i => {
+  const inp = document.getElementById(i ? "cmp-b" : "cmp-a"), list = document.getElementById(i ? "cmp-b-l" : "cmp-a-l");
+  let hits = [];
+  const pick = c => { CMP[i] = c; inp.value = c.n; list.hidden = true; drawCmp(); };
+  inp.value = CMP[i] ? CMP[i].n : "";
+  inp.addEventListener("input", () => {
+    hits = findCom(inp.value);
+    list.innerHTML = hits.map((c,j) => `<li><button type="button" data-j="${j}">${c.n} <span>${c.d}</span></button></li>`).join("");
+    list.hidden = !hits.length;
+    list.querySelectorAll("button").forEach(b => b.onmousedown = e => { e.preventDefault(); pick(hits[+b.dataset.j]); });
+  });
+  inp.addEventListener("keydown", e => { if (e.key === "Enter" && hits.length){ e.preventDefault(); pick(hits[0]); } if (e.key === "Escape") list.hidden = true; });
+  inp.addEventListener("focus", () => inp.select());
+  inp.addEventListener("blur", () => setTimeout(() => { list.hidden = true; if (CMP[i]) inp.value = CMP[i].n; }, 120));
+});
+
+search(); render(); drawCities(); drawCmp();
+</script>
