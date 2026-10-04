@@ -1,21 +1,22 @@
-<title>Loyers au m² en France</title>
+<title>Loyers et prix au m² en France</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Mise en page : carte à gauche, panneau de lecture à droite ; une colonne sur téléphone */
 :root{
   --bg:#f5f6f8; --surface:#ffffff; --fg:#17202e; --muted:#5b6575; --line:#dde1e8;
-  --accent:#1c5cab; --accent-soft:#e3edfa; --mark:#e8590c; --ok:#2f9e44; --close:#f0a92b; --over:#d9dde4; --stroke:#ffffff; --hover:#17202e;
+  --accent:#1c5cab; --accent-soft:#e3edfa; --mark:#e8590c; --ok:#2f9e44; --close:#f0a92b; --over:#c9ced8; --nodata:#f3f4f7; --stroke:#ffffff; --hover:#17202e;
   --c0:#cde2fb; --c1:#9ec5f4; --c2:#6da7ec; --c3:#3987e5; --c4:#256abf; --c5:#1c5cab; --c6:#184f95; --c7:#104281; --c8:#0c3466; --c9:#072250;
+  --v0:#e8def8; --v1:#d2bff1; --v2:#bba0e9; --v3:#a382de; --v4:#8a66cf; --v5:#744fbb; --v6:#613fa3; --v7:#4f3188; --v8:#3d256c; --v9:#2b1a50;
   --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; color-scheme:dark}}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; color-scheme:dark}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 40px}
@@ -24,6 +25,8 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .top{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface)}
 .seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:7px 16px;border-radius:999px;cursor:pointer}
+.seg.mode{margin-bottom:14px}
+.seg.mode button{font-size:16px;font-weight:600;padding:9px 22px}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
 .seg button:focus-visible,input:focus-visible,.rank button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .figs{display:flex;flex-wrap:wrap;gap:12px 28px;margin:22px 0 0}
@@ -85,7 +88,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .bud-f{display:flex;flex-direction:column;gap:6px;min-width:0}
 .bud-main{flex:1 1 260px}
 .bud-amount{display:flex;align-items:baseline;gap:6px}
-.bud-amount input{font-family:var(--display);font-weight:700;font-size:28px;width:5.2ch;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--fg);padding:0 2px;font-variant-numeric:tabular-nums}
+.bud-amount input{font-family:var(--display);font-weight:700;font-size:28px;width:7.5ch;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--fg);padding:0 2px;font-variant-numeric:tabular-nums}
 .bud-amount input:focus{outline:none;border-bottom-color:var(--accent)}
 .bud-amount span{font-family:var(--display);font-size:22px;font-weight:700;color:var(--muted)}
 #bud-r{-webkit-appearance:none;appearance:none;width:100%;height:32px;margin:0;background:transparent;cursor:pointer;--p:15%}
@@ -100,6 +103,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .bud-sum{margin:14px 0 0;color:var(--muted);max-width:90ch}
 .bud-sum b{color:var(--fg)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline;box-shadow:0 0 0 1px var(--line)}
+.dot.nd{background:var(--nodata);box-shadow:0 0 0 1px var(--muted)}
 .dot.st0{background:var(--ok)} .dot.st1{background:var(--close)} .dot.st2{background:var(--over)}
 .legend .li{display:inline-flex;align-items:center;margin-right:18px;font-size:13px;color:var(--fg)}
 .tip .bl{margin-top:6px;font-size:13px;font-weight:600}
@@ -171,8 +175,11 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
 <div class="wrap">
   <div class="top">
     <div>
-      <h1>Loyers au m² en France</h1>
-      <p class="lede">Loyer mensuel charges comprises, en euros par m², estimé à partir des annonces de location. Chaque département montre la moyenne de ses communes, pondérée par leur population.</p>
+      <div class="seg mode" id="mode-seg" role="group" aria-label="Louer ou acheter">
+        <button data-mode="loc" aria-pressed="true">Louer</button><button data-mode="achat" aria-pressed="false">Acheter</button>
+      </div>
+      <h1 id="h1">Loyers au m² en France</h1>
+      <p class="lede" id="lede">Loyer mensuel charges comprises, en euros par m², estimé à partir des annonces de location. Chaque département montre la moyenne de ses communes, pondérée par leur population.</p>
     </div>
     <div class="seg" id="k-seg" role="group" aria-label="Type de logement">
       <button id="bt-a" aria-pressed="true" data-k="a">Appartement</button>
@@ -213,7 +220,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <button class="back" id="back-fr" hidden>← France entière</button>
       </div>
       <div class="top5" id="top5" hidden></div>
-      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer au m²"></svg></div>
+      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg></div>
       <div class="drom" id="drom"></div>
       <div class="legend" id="legend"></div>
     </div>
@@ -252,17 +259,24 @@ const GEO = __GEO__;
 const COMGEO = __COMGEO__;
 // Villes de plus de 100 000 habitants : [nom, dep, lon, lat, population]
 const VILLES = __VILLES__;
+// Ventes 2024-2025 (DVF) : code -> [appart, maison, 1-2 p., 3 p. et +, nb ventes appart, nb ventes maison, zone appart, zone maison, zone 1-2 p., zone 3 p.]
+const VENTES = __VENTES__;
+let MODE = "loc";
 
 const REF = {a:52, m:92};
 const LABEL = {a:"appartement", m:"maison"};
-const BREAKS = [9,10,11,12.5,14,17,21,25,30];
+const BREAKS_M = {loc: [9,10,11,12.5,14,17,21,25,30], achat: [1000,1500,2000,2500,3000,4000,5000,7000,10000]};
+let BREAKS = BREAKS_M.loc;
 const W = 640, H = 620;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const colors = () => [0,1,2,3,4,5,6,7,8,9].map(i => getComputedStyle(document.documentElement).getPropertyValue('--c'+i).trim());
+const colors = () => [0,1,2,3,4,5,6,7,8,9].map(i => getComputedStyle(document.documentElement).getPropertyValue((MODE === "achat" ? "--v" : "--c")+i).trim());
 let K = "a", selDep = null, zoomed = null, hlCode = null;
 
-const fmt = v => v == null ? "—" : v.toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1}) + " €";
-const month = v => (Math.round(v*REF[K]/10)*10).toLocaleString("fr-FR") + "\u00a0€/mois";
+const fmt = v => v == null ? "—" : MODE === "achat" ? Math.round(v).toLocaleString("fr-FR") + " €" : v.toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1}) + " €";
+// Arrondi des montants affichés : 10 € pour un loyer, 1 000 € pour un prix d'achat
+const RND = () => MODE === "achat" ? 1000 : 10;
+const montant = (v, surf) => Math.round(v*surf/RND())*RND();
+const month = v => montant(v, REF[K]).toLocaleString("fr-FR") + (MODE === "achat" ? "\u00a0€" : "\u00a0€/mois");
 const refTxt = () => `${K === "m" ? "une maison" : "un appartement"} de ${REF[K]}\u00a0m²`;
 let PAL = colors();
 const color = v => { if (v == null) return "var(--line)"; let i = BREAKS.findIndex(b => v < b); if (i < 0) i = BREAKS.length; return PAL[i]; };
@@ -272,6 +286,21 @@ const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replac
 const COMS = DATA.coms.map(c => ({c:c[0], n:c[1].replace(/ (\d+)(er|e) Arrondissement$/, " $1$2"), d:c[2], a:c[3], m:c[4], p:c[5], a12:c[6], a3:c[7]}));
 const COMBY = {};
 COMS.forEach(c => { c.k = norm(c.n); COMBY[c.c] = c; });
+// Chaque objet garde ses loyers (L) et ses prix de vente (V) ; le mode recopie l'un ou l'autre dans a, m, a12, a3
+const CHAMPS = ["a","m","a12","a3"];
+COMS.forEach(c => {
+  c.L = {a:c.a, m:c.m, a12:c.a12, a3:c.a3};
+  const v = VENTES.coms[c.c] || [];
+  c.V = {a:v[0] ?? null, m:v[1] ?? null, a12:v[2] ?? null, a3:v[3] ?? null};
+  c.nv = {a:v[4] || 0, m:v[5] || 0}; c.z = {a:v[6], m:v[7], a12:v[8], a3:v[9]};
+});
+Object.entries(DATA.deps).forEach(([code, d]) => {
+  d.L = {a:d.a, m:d.m, a12:d.a12, a3:d.a3};
+  const v = VENTES.deps[code] || {};
+  d.V = {a:v.a ?? null, m:v.m ?? null, a12:v.a12 ?? null, a3:v.a3 ?? null};
+});
+DATA.fr.L = {a:DATA.fr.a, m:DATA.fr.m, a12:DATA.fr.a12, a3:DATA.fr.a3}; DATA.fr.V = {...VENTES.fr};
+const basculer = o => Object.assign(o, MODE === "achat" ? o.V : o.L);
 
 // Contours des communes : décodage à la demande, par département
 const comCache = {};
@@ -388,15 +417,16 @@ const allDeps = () => d3.selectAll("path.dep");
 const tip = document.getElementById("tip");
 // Loyers par mois des trois logements types de la source
 const TYPES = [["a12","1 ou 2 pièces",37],["a3","3 pièces et +",72],["m","Maison",92]];
-const eur = (v, surf) => v == null ? "—" : (Math.round(v*surf/10)*10).toLocaleString("fr-FR") + "\u00a0€";
+const eur = (v, surf) => v == null ? "—" : montant(v, surf).toLocaleString("fr-FR") + "\u00a0€";
 // --- Filtre « mon budget »
 const SURF = {a12:37, a3:72, m:92};
 const PHRASE = {a12:"un 1 ou 2 pièces", a3:"un 3 pièces ou plus", m:"une maison"};
 const BUD = {on:false, t:"a12", v:550};
-// Comparaison sur le loyer arrondi à 10 €, celui qui est affiché
-const budState = vm2 => { if (vm2 == null) return null; const r = Math.round(vm2*SURF[BUD.t]/10)*10; return r <= BUD.v ? 0 : r <= BUD.v*1.1 ? 1 : 2; };
+const BUD_M = {loc: {v:550, min:200, max:2500, step:10, vmin:100, vmax:10000}, achat: {v:150000, min:30000, max:1500000, step:5000, vmin:10000, vmax:10000000}};
+// Comparaison sur le montant arrondi, celui qui est affiché
+const budState = vm2 => { if (vm2 == null) return null; const r = montant(vm2, SURF[BUD.t]); return r <= BUD.v ? 0 : r <= BUD.v*1.1 ? 1 : 2; };
 const BUD_LAB = ["Dans ton budget","Un peu au-dessus","Hors budget"];
-const budCol = st => st == null ? "var(--line)" : ["var(--ok)","var(--close)","var(--over)"][st];
+const budCol = st => st == null ? "var(--nodata)" : ["var(--ok)","var(--close)","var(--over)"][st];
 const comFill = code => { const c = COMBY[code]; return BUD.on ? budCol(budState(c && c[BUD.t])) : color(c && c[K]); };
 function budStats(dep){
   let n = 0, ok = 0, pop = 0, popOk = 0;
@@ -412,8 +442,14 @@ function budLine(o){
   const st = budState(o[BUD.t]), diff = Math.round((o[BUD.t]*SURF[BUD.t]/BUD.v - 1)*100);
   return `<div class="bl"><i class="dot st${st}"></i>${BUD_LAB[st]}${st ? ` (+${diff} %)` : ""}</div>`;
 }
+const ZONE = {v: "prix de la ville entière (peu de ventes)", e: "prix de l'intercommunalité (peu de ventes)"};
+function origine(o){
+  if (MODE !== "achat" || !o.z) return "";
+  if (o[K] == null) return `<div class="s">${["57","67","68","976"].includes(o.d) ? "Pas de données de vente dans ce département" : "Pas assez de ventes"}</div>`;
+  return o.z[K] && ZONE[o.z[K]] ? `<div class="s">${ZONE[o.z[K]]}</div>` : `<div class="s">${o.nv[K].toLocaleString("fr-FR")} ventes en 2024-2025</div>`;
+}
 function tipHtml(title, sub, o){
-  return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>
+  return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>${origine(o)}
     <div class="s">${K==="a"?"Maison":"Appartement"} : ${fmt(o[K==="a"?"m":"a"])}/m²</div>
     <div class="tm">${TYPES.map(([k,l,sf]) => `<span>${l} (${sf}\u00a0m²)</span><b>≈ ${eur(o[k], sf)}</b>`).join("")}</div>${budLine(o)}`;
 }
@@ -463,9 +499,9 @@ function drawTop5(){
   const box = document.getElementById("top5");
   if (!zoomed){ box.hidden = true; return; }
   const d = DATA.deps[zoomed];
-  mapTitle.innerHTML = `<span class="t">${d.n}</span> <span class="h">· ${mapTitle.dataset.n} communes</span><br><span class="h">Loyer moyen du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")} par mois</span>`;
+  mapTitle.innerHTML = `<span class="t">${d.n}</span> <span class="h">· ${mapTitle.dataset.n} communes</span><br><span class="h">${MODE === "achat" ? (d.a == null && d.m == null ? "Pas de données de vente dans ce département" : `Prix médian du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")}`) : `Loyer moyen du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")} par mois`}</span>`;
   const hab = p => p.toLocaleString("fr-FR") + " hab.";
-  box.innerHTML = `<p class="top5-t">Les 5 villes les plus peuplées · loyer par mois, charges comprises</p>
+  box.innerHTML = `<p class="top5-t">Les 5 villes les plus peuplées · ${MODE === "achat" ? "prix d'achat estimé" : "loyer par mois, charges comprises"}</p>
     <div class="tw"><table><thead><tr><th>Ville</th>${TYPES.map(([k,l,sf]) => `<th>${l}<small>${sf}\u00a0m²</small></th>`).join("")}</tr></thead><tbody>` +
     topCities(zoomed).map((g,i) => `<tr${g.c ? ` data-c="${g.c}" tabindex="0"` : ""}>
       <td><span class="n">${i+1}. ${g.n}</span><small>${hab(g.p)}</small></td>` +
@@ -575,7 +611,7 @@ function drawCanvas(){
   if (cv.width !== W*dpr){ cv.width = W*dpr; cv.height = H*dpr; }
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
   const cs = getComputedStyle(document.documentElement);
-  const cols = ["--ok","--close","--over","--line"].map(v => cs.getPropertyValue(v).trim());
+  const cols = ["--ok","--close","--over","--nodata"].map(v => cs.getPropertyValue(v).trim());
   const groups = [[],[],[],[]];
   for (const x of P2D){ const c = COMBY[x.c]; const st = budState(c && c[BUD.t]); groups[st == null ? 3 : st].push(x.p); }
   groups.forEach((g,i) => { ctx.fillStyle = cols[i]; for (const p of g) ctx.fill(p); });
@@ -600,7 +636,7 @@ function drawBudCities(){
   const ok = rows.filter(x => x.st === 0), close = rows.filter(x => x.st === 1);
   let html = `<p class="bc-t">Grandes villes de plus de 100 000 habitants dans ton budget · ${ok.length} sur ${rows.length}</p>`;
   html += ok.length ? `<div class="chips">${ok.map(chip).join("")}</div>`
-    : `<p class="empty">Aucune grande ville ne rentre dans ce budget. La moins chère est ${rows[0].c.s || rows[0].c.n}, à ${eur(rows[0].c[BUD.t], sf)} par mois.</p>`;
+    : `<p class="empty">Aucune grande ville ne rentre dans ce budget. La moins chère est ${rows[0].c.s || rows[0].c.n}, à ${eur(rows[0].c[BUD.t], sf)}${MODE === "achat" ? "" : " par mois"}.</p>`;
   if (close.length) html += `<p class="bc-t">Un peu au-dessus</p><div class="chips">${close.map(chip).join("")}</div>`;
   el.innerHTML = html; el.hidden = false;
   el.querySelectorAll(".cchip").forEach(b => b.onclick = () => { const c = CITYOBJ[+b.dataset.i]; zoomTo(c.d, c.c); showMap(); });
@@ -608,9 +644,9 @@ function drawBudCities(){
 function drawBudSum(){
   drawBudCities();
   const el = document.getElementById("bud-sum");
-  if (!BUD.on){ el.innerHTML = `Choisis un montant et un logement : la carte montre en vert les communes où le loyer type rentre dans ton budget.`; return; }
+  if (!BUD.on){ el.innerHTML = MODE === "achat" ? `Choisis un montant et un logement : la carte montre en vert les communes où le prix d'achat estimé rentre dans ton budget.` : `Choisis un montant et un logement : la carte montre en vert les communes où le loyer type rentre dans ton budget.`; return; }
   const s = budStats(null), nf = x => x.toLocaleString("fr-FR");
-  let txt = `Avec <b>${nf(BUD.v)} € par mois</b> pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m² : <b>${nf(s.ok)} communes sur ${nf(s.n)}</b> sont dans ton budget. Elles regroupent ${Math.round(100*s.popOk/s.pop)} % des habitants.`;
+  let txt = `Avec <b>${nf(BUD.v)} €${MODE === "achat" ? "" : " par mois"}</b> pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m² : <b>${nf(s.ok)} communes sur ${nf(s.n)}</b> sont dans ton budget. Elles regroupent ${Math.round(100*s.popOk/s.pop)} % des habitants.`;
   if (zoomed){ const z = budStats(zoomed); txt += ` <b>${DATA.deps[zoomed].n} : ${nf(z.ok)} sur ${nf(z.n)}.</b>`; }
   el.innerHTML = txt;
 }
@@ -624,8 +660,8 @@ let budTimer;
 const budChanged = () => { BUD.on = true; clearTimeout(budTimer); budTimer = setTimeout(applyBudget, 80); };
 const syncRange = () => budR.style.setProperty("--p", (budR.value - budR.min) / (budR.max - budR.min) * 100 + "%");
 syncRange();
-budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = +budR.value; syncRange(); budChanged(); });
-budV.addEventListener("input", () => { const v = +budV.value; if (v >= 100 && v <= 10000){ BUD.v = v; budR.value = Math.min(+budR.max, v); syncRange(); budChanged(); } });
+budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = BUD_M[MODE].v = +budR.value; syncRange(); budChanged(); });
+budV.addEventListener("input", () => { const v = +budV.value, B = BUD_M[MODE]; if (v >= B.vmin && v <= B.vmax){ BUD.v = B.v = v; budR.value = Math.min(+budR.max, v); syncRange(); budChanged(); } });
 document.querySelectorAll("#bud-t button").forEach(b => b.onclick = () => {
   BUD.t = b.dataset.t;
   document.querySelectorAll("#bud-t button").forEach(x => x.setAttribute("aria-pressed", x === b));
@@ -645,31 +681,33 @@ function highlight(code){
 function drawLegend(){
   if (BUD.on){
     const v = BUD.v, nf = x => x.toLocaleString("fr-FR");
-    document.getElementById("legend").innerHTML = `<span class="unit">Loyer par mois pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m², charges comprises</span>
+    document.getElementById("legend").innerHTML = `<span class="unit">${MODE === "achat" ? `Prix d'achat estimé pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m²` : `Loyer par mois pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m², charges comprises`}</span>
       <span class="li"><i class="dot st0"></i>${BUD_LAB[0]} (jusqu'à ${nf(v)} €)</span>
       <span class="li"><i class="dot st1"></i>${BUD_LAB[1]} (jusqu'à ${nf(Math.round(v*1.1))} €)</span>
-      <span class="li"><i class="dot st2"></i>${BUD_LAB[2]}</span>`;
+      <span class="li"><i class="dot st2"></i>${BUD_LAB[2]}</span>
+      <span class="li"><i class="dot nd"></i>Pas de données</span>`;
     return;
   }
-  const labels = ["< 9", ...BREAKS.map(b => String(b).replace(".",",")+(b===30?"\u00a0+":""))];
-  document.getElementById("legend").innerHTML = `<span class="unit">€ par m² et par mois, charges comprises (chaque case part de la valeur indiquée)</span>` +
+  const lab = b => MODE === "achat" ? (b >= 1000 ? (b/1000).toLocaleString("fr-FR") + "\u00a0k" : String(b)) : String(b).replace(".",",");
+  const labels = ["< " + lab(BREAKS[0]), ...BREAKS.map((b,i) => lab(b) + (i === BREAKS.length-1 ? "\u00a0+" : ""))];
+  document.getElementById("legend").innerHTML = `<span class="unit">${MODE === "achat" ? "€ par m², prix de vente médian 2024-2025 (k = 1 000 €) · gris : pas assez de ventes ou pas de données" : "€ par m² et par mois, charges comprises (chaque case part de la valeur indiquée)"}</span>` +
     PAL.map((col,i)=>`<div class="sw"><i style="background:${col}"></i>${labels[i]}</div>`).join("");
 }
 
 // --- Chiffres clés
 function drawFigs(){
-  const ds = Object.entries(DATA.deps).sort((x,y)=>y[1][K]-x[1][K]);
-  const top = ds[0], low = ds[ds.length-1];
+  const ds = Object.entries(DATA.deps).filter(([,d]) => d[K] != null).sort((x,y)=>y[1][K]-x[1][K]);
+  const top = ds[0], low = ds[ds.length-1], A = MODE === "achat";
   document.getElementById("figs").innerHTML = `
-    <div class="fig"><b>${fmt(DATA.fr[K])}</b><span>Moyenne France · ${LABEL[K]}</span></div>
-    <div class="fig"><b>≈ ${month(DATA.fr[K])}</b><span>Loyer moyen · ${LABEL[K]} de ${REF[K]} m²</span></div>
+    <div class="fig"><b>${fmt(DATA.fr[K])}</b><span>${A ? "Médiane" : "Moyenne"} France · ${LABEL[K]}</span></div>
+    <div class="fig"><b>≈ ${month(DATA.fr[K])}</b><span>${A ? "Prix" : "Loyer moyen"} · ${LABEL[K]} de ${REF[K]} m²</span></div>
     <div class="fig"><b>${fmt(top[1][K])}</b><span>Le plus cher · ${top[1].n}</span></div>
     <div class="fig"><b>${fmt(low[1][K])}</b><span>Le moins cher · ${low[1].n}</span></div>`;
 }
 
 // --- Classement
 function drawRank(){
-  const ds = Object.entries(DATA.deps).sort((x,y)=>y[1][K]-x[1][K]);
+  const ds = Object.entries(DATA.deps).filter(([,d]) => d[K] != null).sort((x,y)=>y[1][K]-x[1][K]);
   const li = ([c,d]) => `<li><button data-c="${c}">${d.n}</button><span>${fmt(d[K])}</span></li>`;
   document.getElementById("rank").innerHTML =
     `<div><h3>Les 10 plus chers</h3><ol>${ds.slice(0,10).map(li).join("")}</ol></div>
@@ -739,7 +777,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li></ul>`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul>`;
 
 
 // --- Comparer deux communes
@@ -761,8 +799,8 @@ function findCom(s){
 const CMP = [COMBY["33063"], COMBY["34172"]];
 function cmpDiff(a, b, sf){
   if (a == null || b == null) return "";
-  const ea = Math.round(a*sf/10)*10, eb = Math.round(b*sf/10)*10, d = eb - ea, p = Math.round((b/a - 1)*100);
-  if (d === 0) return `<small>même loyer</small>`;
+  const ea = montant(a, sf), eb = montant(b, sf), d = eb - ea, p = Math.round((b/a - 1)*100);
+  if (d === 0) return `<small>${MODE === "achat" ? "même prix" : "même loyer"}</small>`;
   return `<small>${d > 0 ? "+" : "−"}${Math.abs(d).toLocaleString("fr-FR")} € (${p > 0 ? "+" : "−"}${Math.abs(p)} %)</small>`;
 }
 function drawCmp(){
@@ -772,14 +810,14 @@ function drawCmp(){
   const k0 = BUD.on ? BUD.t : "a12", [ , l0, sf0] = TYPES.find(t => t[0] === k0);
   let lead = "";
   if (A[k0] != null && B[k0] != null){
-    const d = Math.round(B[k0]*sf0/10)*10 - Math.round(A[k0]*sf0/10)*10;
-    lead = d === 0 ? `Pour ${PHRASE[k0]}, le loyer est le même à ${nA} et à ${nB}.`
-      : `Pour ${PHRASE[k0]}, compte environ <b>${Math.abs(d).toLocaleString("fr-FR")} € de ${d > 0 ? "plus" : "moins"} par mois</b> à ${nB} qu'à ${nA}.`;
+    const d = montant(B[k0], sf0) - montant(A[k0], sf0);
+    lead = d === 0 ? `Pour ${PHRASE[k0]}, le ${MODE === "achat" ? "prix" : "loyer"} est le même à ${nA} et à ${nB}.`
+      : `Pour ${PHRASE[k0]}, compte environ <b>${Math.abs(d).toLocaleString("fr-FR")} € de ${d > 0 ? "plus" : "moins"}${MODE === "achat" ? "" : " par mois"}</b> à ${nB} qu'à ${nA}.`;
   }
   const dot = (c, k) => BUD.on && k === BUD.t && c[k] != null ? `<i class="dot st${budState(c[k])}"></i>` : "";
   box.innerHTML = `<p class="cmp-lead">${lead}</p><table>
     <thead><tr><th></th><th>${nA}<small>${dn(A)}</small></th><th>${nB}<small>${dn(B)}</small></th></tr></thead><tbody>` +
-    TYPES.map(([k,l,sf]) => `<tr><td>${l}<small>${sf} m², par mois</small></td><td><b>${dot(A,k)}${eur(A[k], sf)}</b></td><td><b>${dot(B,k)}${eur(B[k], sf)}</b>${cmpDiff(A[k], B[k], sf)}</td></tr>`).join("") +
+    TYPES.map(([k,l,sf]) => `<tr><td>${l}<small>${sf} m²${MODE === "achat" ? ", prix estimé" : ", par mois"}</small></td><td><b>${dot(A,k)}${eur(A[k], sf)}</b></td><td><b>${dot(B,k)}${eur(B[k], sf)}</b>${cmpDiff(A[k], B[k], sf)}</td></tr>`).join("") +
     `<tr><td>Appartement<small>prix au m²</small></td><td>${fmt(A.a)}</td><td>${fmt(B.a)}</td></tr>
      <tr><td>Maison<small>prix au m²</small></td><td>${fmt(A.m)}</td><td>${fmt(B.m)}</td></tr>
      <tr><td>Habitants</td><td>${A.p.toLocaleString("fr-FR")}</td><td>${B.p.toLocaleString("fr-FR")}</td></tr>
@@ -803,6 +841,30 @@ function drawCmp(){
   inp.addEventListener("blur", () => setTimeout(() => { list.hidden = true; if (CMP[i]) inp.value = CMP[i].n; }, 120));
 });
 
+
+// --- Louer ou acheter
+const TXT = {
+  loc: {h1: "Loyers au m² en France", lede: "Loyer mensuel charges comprises, en euros par m², estimé à partir des annonces de location. Chaque département montre la moyenne de ses communes, pondérée par leur population.", bud: "Mon budget par mois", off: "Revenir aux loyers au m²"},
+  achat: {h1: "Prix de vente au m² en France", lede: "Prix médian au m² des logements vendus en 2024 et 2025, d'après les actes signés chez le notaire. Alsace, Moselle et Mayotte ne sont pas couvertes par la source.", bud: "Mon budget d'achat", off: "Revenir aux prix au m²"}
+};
+function setMode(m){
+  MODE = m; BREAKS = BREAKS_M[m];
+  COMS.forEach(basculer); Object.values(DATA.deps).forEach(basculer); basculer(DATA.fr);
+  VIRT = null; CITYOBJ = null;
+  CMP.forEach((c, i) => { if (c && !c.c) CMP[i] = cmpPool().find(x => x.s === c.s); });
+  const T = TXT[m];
+  document.getElementById("h1").textContent = T.h1;
+  document.getElementById("lede").textContent = T.lede;
+  document.getElementById("bud-h").textContent = T.bud;
+  document.getElementById("bud-off").textContent = T.off;
+  const B = BUD_M[m];
+  Object.assign(budR, {min: B.min, max: B.max, step: B.step}); Object.assign(budV, {min: B.vmin, max: B.vmax, step: B.step});
+  BUD.v = B.v; budV.value = B.v; budR.value = Math.min(B.max, B.v); syncRange();
+  document.querySelectorAll("#mode-seg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.mode === m));
+  render(); search(); drawCmp();
+  if (zoomed) zoomTo(zoomed, hlCode); else drawCities();
+}
+document.querySelectorAll("#mode-seg button").forEach(b => b.onclick = () => { if (b.dataset.mode !== MODE) setMode(b.dataset.mode); });
 search(); render(); drawCities(); drawCmp();
 const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({timeRemaining: () => 8}), 300));
 const prewarm = dl => { if (!p2dStep(dl)) idle(prewarm); };
