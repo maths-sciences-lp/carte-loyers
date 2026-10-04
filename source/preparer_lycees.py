@@ -16,7 +16,7 @@ Pour chaque lycée (même ministère, mêmes jeux de données ouverts) :
 Les sections professionnelles des lycées polyvalents sont publiées sous le numéro du lycée.
 
 Sortie : lycees.json {maj, ref, coms: {code commune: [identifiants]},
-                      etab: {identifiant: [nom, 0 lycée pro | 1 polyvalent, élèves, IPS, réussite %, valeur ajoutée]}}.
+                      etab: {identifiant: [nom, 0 lycée pro | 1 polyvalent, élèves, IPS, réussite %, valeur ajoutée, longitude, latitude]}}.
 Usage : python3 preparer_lycees.py (après preparer_donnees.py)
 """
 import json, subprocess
@@ -27,7 +27,7 @@ ICI = Path(__file__).parent
 CACHE = ICI / "cache"; CACHE.mkdir(exist_ok=True)
 CHAMPS = ("identifiant_de_l_etablissement,nom_etablissement,type_etablissement,statut_public_prive,code_commune,"
           "nom_commune,code_departement,code_nature,voie_professionnelle,etablissement_mere,"
-          "type_rattachement_etablissement_mere,etat,ministere_tutelle,date_maj_ligne")
+          "type_rattachement_etablissement_mere,etat,ministere_tutelle,date_maj_ligne,latitude,longitude")
 URL = ("https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/exports/json"
        f"?select={CHAMPS}&where=type_etablissement%20in%20(%22Lyc%C3%A9e%22,%22EREA%22)")
 EN = "MINISTERE DE L'EDUCATION NATIONALE"
@@ -89,7 +89,9 @@ def main():
         coms[code] = ids
         for i in ids:
             r = val(res, i) or (None, None)
-            etab[i] = [d[i][1], 0 if d[i][0] == "lp" else 1, val(eff, i), val(ips, i), r[0], r[1]]
+            x = par_id[i]
+            pos = [round(x["longitude"], 4), round(x["latitude"], 4)] if x.get("longitude") is not None else [None, None]
+            etab[i] = [d[i][1], 0 if d[i][0] == "lp" else 1, val(eff, i), val(ips, i), r[0], r[1], *pos]
     v = [e[3] for e in etab.values() if e[3] is not None]
     ref = {"ips": round(sum(v) / len(v), 1), "ips_an": IPS_AN, "eff_an": EFF_AN, "res_an": RES_AN}
     maj = max(x["date_maj_ligne"] for x in tous if x.get("date_maj_ligne"))

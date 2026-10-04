@@ -10,7 +10,7 @@ Page en ligne : https://maths-sciences-lp.github.io/carte-loyers/
 - le loyer par mois d'un appartement de 1 ou 2 pièces (37 m²), de 3 pièces ou plus (72 m²) et d'une maison (92 m²), pour les 5 plus grandes villes de chaque département ;
 - un découpage au choix : régions, départements ou académies ;
 - en vue Académies, une couche « barres d'entrée inter PLP maths-sciences » (2022 à 2026), avec un champ « Mon barème » qui n'est enregistré nulle part ;
-- les lycées publics à voie professionnelle (lycées pro et lycées polyvalents avec une section pro) : nombre par commune, département et académie, et, pour chaque lycée, élèves de la voie pro, indice de position sociale (IPS) et réussite au bac pro, dans un tableau sous la carte ;
+- les lycées publics à voie professionnelle (lycées pro et lycées polyvalents avec une section pro) : nombre par commune, département et académie, et, pour chaque lycée, élèves de la voie pro, indice de position sociale (IPS) et réussite au bac pro, dans un tableau sous la carte ; un menu « Afficher » colore aussi la carte selon le nombre de ces lycées et place chaque lycée sur la carte d'un département ;
 - un filtre « mon budget » et la comparaison de deux communes ;
 - en mode Acheter : prix de vente médian au m² et prix estimé des mêmes logements ;
 - « Je gagne… » : le budget de loyer réglé sur un tiers du salaire net ;
