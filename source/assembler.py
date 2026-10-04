@@ -14,7 +14,7 @@ ICONE = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='
 CREDIT = "Carte réalisée pour la chaîne Maths·Sciences LP."
 
 t = (ICI / "template.html").read_text()
-for cle, fichier in (("__DATA__", "data.json"), ("__GEO__", "geo.json"), ("__COMGEO__", "communes.json"), ("__VILLES__", "villes.json"), ("__VENTES__", "ventes.json"), ("__REVENUS__", "revenus.json"), ("__INDIC__", "indicateurs.json"), ("__SERVICES__", "services.json"), ("__ZONES__", "zones.json")):
+for cle, fichier in (("__DATA__", "data.json"), ("__GEO__", "geo.json"), ("__COMGEO__", "communes.json"), ("__VILLES__", "villes.json"), ("__VENTES__", "ventes.json"), ("__REVENUS__", "revenus.json"), ("__INDIC__", "indicateurs.json"), ("__SERVICES__", "services.json"), ("__ZONES__", "zones.json"), ("__BARRES__", "barres.json")):
     t = t.replace(cle, (ICI / fichier).read_text())
 t = t.replace("__CREDIT__", f'<p class="credit">{CREDIT}</p>', 1)
 i = t.index("</style>") + len("</style>")

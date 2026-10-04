@@ -8,15 +8,16 @@
   --accent:#1c5cab; --accent-soft:#e3edfa; --mark:#e8590c; --ok:#2f9e44; --close:#f0a92b; --over:#c9ced8; --nodata:#f3f4f7; --stroke:#ffffff; --hover:#17202e;
   --c0:#cde2fb; --c1:#9ec5f4; --c2:#6da7ec; --c3:#3987e5; --c4:#256abf; --c5:#1c5cab; --c6:#184f95; --c7:#104281; --c8:#0c3466; --c9:#072250;
   --v0:#e8def8; --v1:#d2bff1; --v2:#bba0e9; --v3:#a382de; --v4:#8a66cf; --v5:#744fbb; --v6:#613fa3; --v7:#4f3188; --v8:#3d256c; --v9:#2b1a50;
+  --r0:#fdf0d9; --r1:#f9dcae; --r2:#f4c27a; --r3:#eea54a; --r4:#e3862a; --r5:#c96a1c; --r6:#a35217; --r7:#7c3d14; --r8:#552a0f;
   --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --r0:#fbe7c4; --r1:#f6d29a; --r2:#f0b968; --r3:#e89c3f; --r4:#db7f26; --r5:#c2671c; --r6:#a3551a; --r7:#864617; --r8:#6b3914; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10141b; --surface:#171d27; --fg:#e8ecf2; --muted:#9aa4b4; --line:#2a3240;
-  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}
+  --accent:#86b6ef; --accent-soft:#1d2a3d; --mark:#ff922b; --ok:#3fb35a; --close:#e0a63a; --over:#3a4352; --nodata:#1b212c; --stroke:#10141b; --hover:#ffffff; --c0:#d6e6fb; --c1:#b3d0f6; --c2:#8fb9f1; --c3:#6aa1eb; --c4:#4a89e2; --c5:#3572d0; --c6:#2a5fb8; --c7:#234f9e; --c8:#1d4186; --c9:#18366f; --r0:#fbe7c4; --r1:#f6d29a; --r2:#f0b968; --r3:#e89c3f; --r4:#db7f26; --r5:#c2671c; --r6:#a3551a; --r7:#864617; --r8:#6b3914; --v0:#ece3fb; --v1:#d8c6f5; --v2:#c2a8ee; --v3:#ab8be6; --v4:#946fdb; --v5:#7f59cc; --v6:#6c49b6; --v7:#5c3d9c; --v8:#4c3283; --v9:#3e296c; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 40px}
@@ -40,6 +41,12 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .maphead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:6px}
 #maptitle{flex:1 1 240px;min-width:0}
 .seg.vue button{padding:6px 11px;font-size:13px}
+#couche-sel,#bar-an{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 12px;cursor:pointer}
+.barctl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:0 0 10px;font-size:14px}
+.barctl label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#bar-mon{font:inherit;font-size:15px;font-weight:600;width:8ch;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.barctl .h{color:var(--muted);font-size:12px}
+#couche-sel:focus-visible,#bar-an:focus-visible,#bar-mon:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #map path.grp-line{fill:none;stroke:var(--fg);stroke-width:1.7;stroke-linecap:round;pointer-events:none;opacity:.85}
 #dep-sel{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 12px;cursor:pointer}
 #dep-sel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -232,8 +239,14 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <div class="seg vue" id="vue-seg" role="group" aria-label="Découpage de la carte">
           <button data-v="reg" aria-pressed="false">Régions</button><button data-v="dep" aria-pressed="true">Départements</button><button data-v="aca" aria-pressed="false">Académies</button>
         </div>
+        <select id="couche-sel" aria-label="Couche affichée" hidden><option value="prix">Afficher : loyers et prix</option><option value="barres">Afficher : barres inter PLP maths-sciences</option></select>
         <select id="dep-sel" aria-label="Aller à un département"><option value="">Choisir un département…</option></select>
         <button class="back" id="back-fr" hidden>← France entière</button>
+      </div>
+      <div class="barctl" id="bar-ctl" hidden>
+        <label for="bar-an">Année</label><select id="bar-an"></select>
+        <label for="bar-mon">Mon barème</label><input id="bar-mon" type="number" inputmode="decimal" min="0" max="5000" step="0.1" placeholder="ex. 300">
+        <span class="h">points · barème du dernier entrant au mouvement inter</span>
       </div>
       <div class="top5" id="top5" hidden></div>
       <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg></div>
@@ -285,6 +298,21 @@ const INDIC = __INDIC__;
 const SERV = __SERVICES__;
 // Académie et région de chaque département, et frontières à tracer (référentiel du ministère de l'Enseignement supérieur)
 const ZONES = __ZONES__;
+// Barres d'entrée du mouvement inter, PLP maths-sciences, par académie : {annee: [barre, nombre d'entrants]}
+const BARRES = __BARRES__;
+let COUCHE = "prix", BAN = Math.max(...BARRES.annees), MONB = null, BPAL = null;
+const BAR_BREAKS = [50, 100, 200, 300, 400, 500, 700, 1000];
+const barreDe = (n, an = BAN) => { const v = BARRES.aca[n]?.[an]; return v && v[0] != null ? v[0] : null; };
+const fmtB = v => v == null ? "pas de barre" : v.toLocaleString("fr-FR", {maximumFractionDigits: 1});
+const barColor = b => {
+  if (b == null) return "var(--nodata)";
+  if (!BPAL) BPAL = [0,1,2,3,4,5,6,7,8].map(i => getComputedStyle(document.documentElement).getPropertyValue("--r" + i).trim());
+  let i = BAR_BREAKS.findIndex(x => b < x); if (i < 0) i = BAR_BREAKS.length; return BPAL[i];
+};
+// 0 = entré, 1 = il manquait moins de 10 %, 2 = barre trop haute
+const barState = b => b == null ? null : MONB >= b ? 0 : MONB * 1.1 >= b ? 1 : 2;
+const enBarres = () => COUCHE === "barres" && VIEW === "aca";
+const barFill = n => MONB != null ? budCol(barState(barreDe(n))) : barColor(barreDe(n));
 
 const REF = {a:52, m:92};
 const LABEL = {a:"appartement", m:"maison"};
@@ -532,6 +560,17 @@ function tipHtml(title, sub, o){
 }
 const enGroupe = code => VIEW !== "dep" && !zoomed && !zoomedGrp && !!grpOf(code);
 function showGrpTip(ev, n){
+  if (enBarres()){
+    const pub = BARRES.annees.filter(a => barreDe(n, a) != null), ok = MONB != null ? pub.filter(a => MONB >= barreDe(n, a)).length : null;
+    const hist = BARRES.annees.map(a => { const e = BARRES.aca[n]?.[a]?.[1]; return `<span>${a}</span><b>${fmtB(barreDe(n, a))}${e != null ? ` · ${e} entrant${e > 1 ? "s" : ""}` : ""}</b>`; }).join("");
+    const note = BARRES.notes[n] ? Object.entries(BARRES.notes[n]).map(([a, x]) => `${a} : ${x}`).join(" ; ") : "";
+    const st = barState(barreDe(n));
+    tip.innerHTML = `<b>${grpLabel(n)}</b><div class="v">${fmtB(barreDe(n))}${barreDe(n) != null ? " pts" : ""}</div>
+      <div class="s">Barre d'entrée ${BAN} au mouvement inter, PLP maths-sciences</div><div class="tm">${hist}</div>`
+      + (MONB != null ? `<div class="bl"><i class="dot ${st == null ? "nd" : "st" + st}"></i>Avec ${fmtB(MONB)} pts : entré ${ok} fois sur ${pub.length} année${pub.length > 1 ? "s" : ""} publiée${pub.length > 1 ? "s" : ""}</div>` : "")
+      + (note ? `<div class="s">${note}</div>` : "") + `<div class="s" style="margin-top:4px">Cliquez pour voir ses départements</div>`;
+    tip.hidden = false; moveTip(ev); return;
+  }
   const o = grpData(n), bs = BUD.on ? budStats(o.deps) : null;
   tip.innerHTML = tipHtml(o.n, `${o.deps.length} département${o.deps.length > 1 ? "s" : ""}`, o).replace(/<div class="bl">.*<\/div>$/s, "")
     + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "")
@@ -700,6 +739,7 @@ function paintComs(){
 }
 function paintDeps(){
   allDeps().attr("fill", f => {
+    if (enBarres() && !zoomed && !zoomedGrp && grpOf(f.properties.c)) return barFill(grpOf(f.properties.c));
     if (BUD.on) return zoomed ? "var(--line)" : "transparent";
     if (VIEW !== "dep" && !zoomedGrp && grpOf(f.properties.c)){ const o = grpData(grpOf(f.properties.c)); return color(o[K]); }
     const d = DATA.deps[f.properties.c]; return d ? color(d[K]) : "var(--line)";
@@ -777,7 +817,7 @@ function applyBudget(){
 }
 const budV = document.getElementById("bud-v"), budR = document.getElementById("bud-r");
 let budTimer;
-const budChanged = () => { BUD.on = true; clearTimeout(budTimer); budTimer = setTimeout(applyBudget, 80); };
+const budChanged = () => { if (COUCHE !== "prix") setCouche("prix"); BUD.on = true; clearTimeout(budTimer); budTimer = setTimeout(applyBudget, 80); };
 const syncRange = () => budR.style.setProperty("--p", (budR.value - budR.min) / (budR.max - budR.min) * 100 + "%");
 syncRange();
 budR.addEventListener("input", () => { budV.value = budR.value; BUD.v = BUD_M[MODE].v = +budR.value; syncRange(); budChanged(); });
@@ -799,7 +839,7 @@ salIn.addEventListener("input", () => {
   BUD.v = BUD_M.loc.v = v; budV.value = v;
   budR.value = Math.min(+budR.max, Math.max(+budR.min, v)); syncRange(); budChanged();
 });
-document.getElementById("bud-on").onclick = () => { BUD.on = true; applyBudget(); if (matchMedia("(max-width:860px)").matches) showMap(); };
+document.getElementById("bud-on").onclick = () => { if (COUCHE !== "prix") setCouche("prix"); BUD.on = true; applyBudget(); if (matchMedia("(max-width:860px)").matches) showMap(); };
 document.getElementById("bud-off").onclick = () => { BUD.on = false; applyBudget(); };
 
 function highlight(code){
@@ -811,6 +851,20 @@ function highlight(code){
 
 // --- Légende
 function drawLegend(){
+  if (enBarres()){
+    const L = document.getElementById("legend");
+    if (MONB != null){
+      L.innerHTML = `<span class="unit">Barre d'entrée ${BAN} comparée à ton barème de ${fmtB(MONB)} points</span>
+        <span class="li"><i class="dot st0"></i>Tu serais entré</span><span class="li"><i class="dot st1"></i>Il manquait moins de 10 %</span>
+        <span class="li"><i class="dot st2"></i>Barre trop haute</span><span class="li"><i class="dot nd"></i>Pas de barre publiée</span>`;
+    } else {
+      if (!BPAL) barColor(0);
+      const labels = ["< 50", ...BAR_BREAKS.map((b, i) => b.toLocaleString("fr-FR") + (i === BAR_BREAKS.length - 1 ? "\u00a0+" : ""))];
+      L.innerHTML = `<span class="unit">Barre d'entrée ${BAN} au mouvement inter, en points (PLP maths-sciences) · blanc : pas de barre publiée</span>` +
+        BPAL.map((col, i) => `<div class="sw"><i style="background:${col}"></i>${labels[i]}</div>`).join("");
+    }
+    return;
+  }
   if (BUD.on){
     const v = BUD.v, nf = x => x.toLocaleString("fr-FR");
     document.getElementById("legend").innerHTML = `<span class="unit">${MODE === "achat" ? `Prix d'achat estimé pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m²` : `Loyer par mois pour ${PHRASE[BUD.t]} de ${SURF[BUD.t]} m², charges comprises`}</span>
@@ -839,6 +893,16 @@ function drawFigs(){
 
 // --- Classement
 function drawRank(){
+  if (enBarres()){
+    const ds = Object.keys(GROUPS.aca).map(n => [n, grpLabel(n).replace(/^Académie (de |d')/, ""), barreDe(n)]).filter(x => x[2] != null).sort((x,y) => x[2] - y[2]);
+    const n = Math.min(10, Math.floor(ds.length / 2));
+    const li = ([c,nom,v]) => `<li><button data-c="${c}">${MONB != null ? `<i class="dot st${barState(v)}"></i>` : ""}${nom}</button><span>${fmtB(v)} pts</span></li>`;
+    document.getElementById("rank").innerHTML =
+      `<div><h3>Les ${n} plus accessibles</h3><ol>${ds.slice(0,n).map(li).join("")}</ol></div>
+       <div><h3>Les ${n} plus demandées</h3><ol>${ds.slice(-n).reverse().map(li).join("")}</ol></div>`;
+    document.querySelectorAll("#rank button").forEach(b => b.onclick = () => { zoomGroup(b.dataset.c); showMap(); });
+    return;
+  }
   const ds = (VIEW === "dep" ? Object.entries(DATA.deps).map(([c,d]) => [c, d.n, d[K]]) : Object.keys(GROUPS[VIEW]).map(n => [n, grpLabel(n).replace(/^Académie (de |d')/, ""), grpData(n)[K]]))
     .filter(x => x[2] != null).sort((x,y) => y[2] - x[2]);
   const n = Math.min(10, Math.floor(ds.length / 2));
@@ -870,7 +934,7 @@ function selectDep(code){
   const t = document.getElementById("d-title");
   const list = document.getElementById("d-list");
   const rank = document.getElementById("rank");
-  if (!code){ t.textContent = "Classement des " + ({dep: "départements", aca: "académies", reg: "régions"})[VIEW]; list.hidden = true; rank.hidden = false; drawRank(); return; }
+  if (!code){ t.textContent = enBarres() ? `Barres d'entrée inter ${BAN} · PLP maths‑sciences` : "Classement des " + ({dep: "départements", aca: "académies", reg: "régions"})[VIEW]; list.hidden = true; rank.hidden = false; drawRank(); return; }
   const d = DATA.deps[code];
   rank.hidden = true; list.hidden = false;
   t.innerHTML = `${d.n} <span style="color:var(--muted);font-weight:500">· ${fmt(d[K])}/m²</span>`;
@@ -915,17 +979,36 @@ q.addEventListener("input", search);
 
 // --- Rendu
 function render(){
-  PAL = colors();
+  PAL = colors(); BPAL = null;
   paintDeps(); paintComs(); drawMiniComs(); drawCanvas(); drawFigs(); drawLegend(); drawTop5(); drawBudSum(); drawCities(); drawGrpLines();
   if (zoomedGrp) selectGroup(zoomedGrp); else selectDep(selDep);
 }
+// Couche « barres d'entrée inter » (mode Académies)
+const coucheSel = document.getElementById("couche-sel"), barCtl = document.getElementById("bar-ctl"), barAn = document.getElementById("bar-an"), barMon = document.getElementById("bar-mon");
+BARRES.annees.slice().reverse().forEach(a => barAn.add(new Option(String(a), a)));
+barAn.value = BAN;
+function setCouche(c){
+  COUCHE = c; coucheSel.value = c;
+  coucheSel.hidden = VIEW !== "aca"; barCtl.hidden = !enBarres();
+  if (enBarres() && BUD.on){ BUD.on = false; applyBudget(); }
+  paintDeps(); drawLegend();
+  if (!zoomed && !zoomedGrp) selectDep(null);
+}
+coucheSel.onchange = () => setCouche(coucheSel.value);
+barAn.onchange = () => { BAN = +barAn.value; paintDeps(); drawLegend(); if (!zoomed && !zoomedGrp) selectDep(null); };
+barMon.addEventListener("input", () => {
+  const v = parseFloat(String(barMon.value).replace(",", "."));
+  MONB = isFinite(v) && v >= 0 ? v : null;
+  paintDeps(); drawLegend(); if (!zoomed && !zoomedGrp) selectDep(null);
+});
 document.querySelectorAll("#vue-seg button").forEach(b => b.onclick = () => {
   if (b.dataset.v === VIEW) return;
   if (zoomed || zoomedGrp) zoomOut();
   VIEW = b.dataset.v;
   document.querySelectorAll("#vue-seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
   mapTitle.innerHTML = hint();
-  paintDeps(); drawGrpLines(); selectDep(null);
+  coucheSel.hidden = VIEW !== "aca"; barCtl.hidden = !enBarres();
+  paintDeps(); drawGrpLines(); drawLegend(); selectDep(null);
 });
 document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
   K = b.dataset.k;
@@ -934,7 +1017,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Régions et académies : <a href="https://www.data.gouv.fr/datasets/referentiel-geographique-francais-communes-unites-urbaines-aires-urbaines-departements-academies-regions" target="_blank" rel="noopener">référentiel géographique</a> du ministère de l'Enseignement supérieur et de la Recherche. La valeur d'une région ou d'une académie est la moyenne de ses communes, pondérée par la population (aussi en mode Acheter).</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Barres d'entrée inter (mode Académies) : barème du dernier entrant au mouvement inter-académique, PLP mathématiques-sciences physiques. 2024 à 2026 : <a href="https://info-mutations.phm.education.gouv.fr/cmpmo-front/mvt/comparateur/inter" target="_blank" rel="noopener">comparateur officiel du ministère</a>, avec le nombre d'entrants ; 2022 et 2023 : <a href="https://mutations.sudeducation.org/plp/" target="_blank" rel="noopener">bilan de SUD éducation</a>. Pas de barre publiée quand il y a eu au plus un entrant. « Mon barème » n'est enregistré nulle part.</li><li>Régions et académies : <a href="https://www.data.gouv.fr/datasets/referentiel-geographique-francais-communes-unites-urbaines-aires-urbaines-departements-academies-regions" target="_blank" rel="noopener">référentiel géographique</a> du ministère de l'Enseignement supérieur et de la Recherche. La valeur d'une région ou d'une académie est la moyenne de ses communes, pondérée par la population (aussi en mode Acheter).</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
 
 
 // --- Comparer deux communes
