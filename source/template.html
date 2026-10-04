@@ -91,6 +91,15 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .lnk:hover{text-decoration:underline}
 .lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mapwrap{position:relative}
+.pz-reset{position:absolute;top:6px;right:6px;z-index:2;font-size:13px;padding:7px 12px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.pz-hint{margin:6px 0 0;font-size:12px;color:var(--muted)}
+#map.drag{cursor:grabbing}
+#map.drag path{pointer-events:none}
+.tip.t{pointer-events:auto;max-height:calc(100vh - 16px);overflow-y:auto;overscroll-behavior:contain}
+.tip.t .tt{padding-right:30px}
+.tip-x{position:absolute;top:2px;right:2px;width:40px;height:40px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:24px;line-height:1;border-radius:50%;cursor:pointer}
+.tip-more{all:unset;display:block;margin-top:6px;padding:9px 0 3px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer}
+.tip-x:focus-visible,.tip-more:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #cv{position:absolute;inset:0;width:100%;height:100%}
 #map{position:relative}
 #map path.mini{pointer-events:none;stroke:none}
@@ -257,7 +266,8 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <label for="bar-mon">Mon barème</label><input id="bar-mon" type="number" inputmode="decimal" min="0" max="5000" step="0.1" placeholder="ex. 300">
         <span class="h">points · barème du dernier entrant au mouvement inter</span>
       </div>
-      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg></div>
+      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg><button class="back pz-reset" id="pz-reset" type="button" hidden>↺ Tout le département</button></div>
+      <p class="pz-hint" id="pz-hint" hidden></p>
       <div class="drom" id="drom"></div>
       <div class="legend" id="legend"></div>
       <div class="top5" id="top5" hidden></div>
@@ -402,12 +412,15 @@ const svg = d3.select("#map");
 const metro = {type:"FeatureCollection", features: GEO.features.filter(f => f.properties.c.length < 3)};
 const proj = d3.geoConicConformal().parallels([44,49]).rotate([-3,0]).fitExtent([[8,8],[W-8,H-8]], metro);
 const path = d3.geoPath(proj);
-const gRoot = svg.append("g");
+// gPZ : agrandissement à deux doigts (ou pincement du pavé tactile) dans un département
+const gPZ = svg.append("g");
+let PZ = {k: 1, x: 0, y: 0};
+const gRoot = gPZ.append("g");
 const gDeps = gRoot.append("g");
 const gGrp = gRoot.append("g");
 const gComs = gRoot.append("g");
 const gLine = gRoot.append("g");
-const gOm = svg.append("g").attr("display","none");
+const gOm = gPZ.append("g").attr("display","none");
 const gCity = svg.append("g").attr("class","cities");
 
 // --- Noms des grandes villes, placés sans chevauchement (les plus peuplées d'abord)
@@ -423,7 +436,7 @@ function drawCities(){
   if (zoomed && !view.om){
     const items = gComs.selectAll("path.com").data().map(f => {
       const [[x0,y0],[x1,y1]] = path.bounds(f);
-      return {f, bw: (x1-x0)*view.k, bh: (y1-y0)*view.k};
+      return {f, bw: (x1-x0)*view.k*PZ.k, bh: (y1-y0)*view.k*PZ.k};
     }).sort((a,b) => b.bw*b.bh - a.bw*a.bh);
     for (const {f, bw, bh} of items){
       const c = COMBY[f.properties.c]; if (!c) continue;
@@ -432,7 +445,7 @@ function drawCities(){
       const val = BUD.on ? eur(c[BUD.t], SURF[BUD.t]) : fmt(c[K]);
       const w = Math.max(name.length, val.length) * fs * 0.56 + 6, h = fs * 2.3;
       if (w > bw * 0.9 || h > bh * 0.8) continue;
-      const [cx, cy] = path.centroid(f), x = view.tx + view.k*cx, y = view.ty + view.k*cy;
+      const [cx, cy] = path.centroid(f), x = PZ.x + PZ.k*(view.tx + view.k*cx), y = PZ.y + PZ.k*(view.ty + view.k*cy);
       const box = {x: x - w/2, y: y - h/2, w, h};
       if (hit(box) || box.x < 0 || box.x + w > W || box.y < 0 || box.y + h > H) continue;
       boxes.push(box); clabs.push({x, y, name, val});
@@ -443,7 +456,7 @@ function drawCities(){
     if (view.om && d !== zoomed) continue;
     if (view.k === 1 && ["92","93","94"].includes(d)) continue;
     const pt = view.p([lon, lat]); if (!pt) continue;
-    const x = view.tx + view.k * pt[0], y = view.ty + view.k * pt[1];
+    const x = PZ.x + PZ.k*(view.tx + view.k * pt[0]), y = PZ.y + PZ.k*(view.ty + view.k * pt[1]);
     if (x < 4 || x > W - 4 || y < 4 || y > H - 4) continue;
     const w = n.length * fs * 0.56 + 4, h = fs * 1.15;
     const right = {x: x + r + 3, y: y - h/2, w, h}, left = {x: x - r - 3 - w, y: y - h/2, w, h};
@@ -496,6 +509,8 @@ const allDeps = () => d3.selectAll("path.dep");
 
 // --- Infobulle
 const tip = document.getElementById("tip");
+const TACT = matchMedia("(hover: none)");
+const tipOut = () => { if (!TACT.matches) tip.hidden = true; };
 // Loyers par mois des trois logements types de la source
 const TYPES = [["a12","1 ou 2 pièces",37],["a3","3 pièces et +",72],["m","Maison",92]];
 const eur = (v, surf) => v == null ? "—" : montant(v, surf).toLocaleString("fr-FR") + "\u00a0€";
@@ -558,10 +573,15 @@ function indicHtml(o){
   }
   return l.length ? `<div class="tm ex">${l.join("")}</div>` : "";
 }
-function tipHtml(title, sub, o){
-  return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>${origine(o)}
-    <div class="s">${K==="a"?"Maison":"Appartement"} : ${fmt(o[K==="a"?"m":"a"])}/m²</div>
-    <div class="tm">${TYPES.map(([k,l,sf]) => `<span>${l} (${sf}\u00a0m²)</span><b>≈ ${eur(o[k], sf)}</b>`).join("")}</div>${indicHtml(o)}${budLine(o)}`;
+// Écran tactile : bulle courte (loyers), le reste derrière « Plus de détails », et une croix pour fermer
+function tipHtml(title, sub, o, bud = true){
+  const alt = `<div class="s">${K==="a"?"Maison":"Appartement"} : ${fmt(o[K==="a"?"m":"a"])}/m²</div>`;
+  const loyers = `<div class="tm">${TYPES.map(([k,l,sf]) => `<span>${l} (${sf}\u00a0m²)</span><b>≈ ${eur(o[k], sf)}</b>`).join("")}</div>`;
+  if (!TACT.matches) return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>${origine(o)}
+    ${alt}${loyers}${indicHtml(o)}${bud ? budLine(o) : ""}`;
+  return `<button class="tip-x" type="button" aria-label="Fermer">×</button><div class="tt"><b>${title}</b> <span class="s">(${sub})</span></div>
+    <div class="v">${fmt(o[K])}/m²</div>${origine(o)}${loyers}${bud ? budLine(o) : ""}
+    <div class="tip-plus" hidden>${alt}${indicHtml(o)}</div><button class="tip-more" type="button" aria-expanded="false">Plus de détails ▾</button>`;
 }
 const enGroupe = code => VIEW !== "dep" && !zoomed && !zoomedGrp && !!grpOf(code);
 function showGrpTip(ev, n){
@@ -577,7 +597,7 @@ function showGrpTip(ev, n){
     tip.hidden = false; moveTip(ev); return;
   }
   const o = grpData(n), bs = BUD.on ? budStats(o.deps) : null;
-  tip.innerHTML = tipHtml(o.n, `${o.deps.length} département${o.deps.length > 1 ? "s" : ""}`, o).replace(/<div class="bl">.*<\/div>$/s, "")
+  tip.innerHTML = tipHtml(o.n, `${o.deps.length} département${o.deps.length > 1 ? "s" : ""}`, o, false)
     + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "")
     + `<div class="s" style="margin-top:4px">Cliquez pour voir ses départements</div>`;
   tip.hidden = false; moveTip(ev);
@@ -585,7 +605,7 @@ function showGrpTip(ev, n){
 function showDepTip(ev, code){
   const d = DATA.deps[code]; if (!d) return;
   const bs = BUD.on ? budStats(code) : null;
-  tip.innerHTML = tipHtml(d.n, code, d).replace(/<div class="bl">.*<\/div>$/s, "") + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "") + (zoomed === code ? "" : `<div class="s" style="margin-top:4px">Cliquez pour voir les communes</div>`);
+  tip.innerHTML = tipHtml(d.n, code, d, false) + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "") + (zoomed === code ? "" : `<div class="s" style="margin-top:4px">Cliquez pour voir les communes</div>`);
   tip.hidden = false; moveTip(ev);
 }
 function showComTip(ev, code){
@@ -593,7 +613,10 @@ function showComTip(ev, code){
   tip.innerHTML = tipHtml(c.n, c.d, c);
   tip.hidden = false; moveTip(ev);
 }
+let tipEv = null;
 function moveTip(ev){
+  tipEv = {clientX: ev.clientX, clientY: ev.clientY};
+  tip.classList.toggle("t", TACT.matches);
   const w = tip.offsetWidth, h = tip.offsetHeight;
   let x = ev.clientX + 14, y = ev.clientY + 14;
   if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
@@ -601,12 +624,19 @@ function moveTip(ev){
   tip.style.left = Math.max(8,x) + "px"; tip.style.top = Math.max(8,y) + "px";
 }
 addEventListener("scroll", () => { tip.hidden = true; }, {passive: true});
-document.addEventListener("touchstart", e => { if (!e.target.closest("#map, #drom")) tip.hidden = true; }, {passive: true});
+document.addEventListener("touchstart", e => { if (!e.target.closest("#tip, #map path.com, #map path.dep, #drom path.dep")) tip.hidden = true; }, {passive: true});
+tip.addEventListener("click", e => {
+  if (e.target.closest(".tip-x")){ tip.hidden = true; return; }
+  const b = e.target.closest(".tip-more"); if (!b) return;
+  const plus = tip.querySelector(".tip-plus"), ouvre = plus.hidden;
+  plus.hidden = !ouvre; b.textContent = ouvre ? "Moins de détails ▴" : "Plus de détails ▾"; b.setAttribute("aria-expanded", ouvre);
+  if (tipEv) moveTip(tipEv);
+});
 allDeps()
   .on("mouseenter", (ev,f) => enGroupe(f.properties.c) ? showGrpTip(ev, grpOf(f.properties.c)) : showDepTip(ev, f.properties.c))
   .on("mousemove", moveTip)
-  .on("mouseleave", () => tip.hidden = true)
-  .on("click", (ev,f) => enGroupe(f.properties.c) ? zoomGroup(grpOf(f.properties.c)) : zoomTo(f.properties.c));
+  .on("mouseleave", tipOut)
+  .on("click", (ev,f) => { if (Date.now() < noClick) return; enGroupe(f.properties.c) ? zoomGroup(grpOf(f.properties.c)) : zoomTo(f.properties.c); });
 
 // --- Les 5 villes les plus peuplées d'un département (arrondissements de Paris, Lyon, Marseille regroupés)
 function topCities(dep){
@@ -645,6 +675,96 @@ function drawTop5(){
   });
 }
 
+// --- Agrandir la carte d'un département : deux doigts, pincement du pavé tactile ou Ctrl + molette ; glisser pour se déplacer
+const mapEl = svg.node(), pzBtn = document.getElementById("pz-reset"), pzHint = document.getElementById("pz-hint");
+const PZ_MAX = 10;
+let noClick = 0, geste = null, pzTimer;
+function pzSet(k, x, y){
+  k = Math.max(1, Math.min(PZ_MAX, k));
+  if (k < 1.02){ k = 1; x = 0; y = 0; }
+  x = Math.min(0, Math.max(W - W*k, x)); y = Math.min(0, Math.max(H - H*k, y));
+  PZ = {k, x, y};
+  gPZ.attr("transform", k === 1 ? null : `translate(${x},${y}) scale(${k})`);
+  // Carte normale : un doigt fait défiler la page. Carte agrandie : un doigt la déplace.
+  mapEl.style.touchAction = k > 1 ? "none" : "pan-x pan-y";
+  pzBtn.hidden = k === 1;
+  pzHint.hidden = !zoomed || k > 1;
+  pzHint.textContent = TACT.matches ? "Pour agrandir, écarte deux doigts sur la carte." : "Pour agrandir : pince le pavé tactile, ou Ctrl + molette.";
+}
+const svgPt = (cx, cy) => { const r = mapEl.getBoundingClientRect(); return [(cx - r.left) * W / r.width, (cy - r.top) * H / r.height]; };
+const gesteDebut = () => { tip.hidden = true; gCity.attr("display", "none"); };
+const gesteFin = () => { gCity.attr("display", null); drawCities(); };
+// garde sous le point p (coordonnées de la carte) le point qui y était avec l'état s
+const pzAutour = (s, p0, p, k) => { k = Math.max(1, Math.min(PZ_MAX, k)); pzSet(k, p[0] - (p0[0] - s.x) / s.k * k, p[1] - (p0[1] - s.y) / s.k * k); };
+const deuxDoigts = t => { const a = svgPt(t[0].clientX, t[0].clientY), b = svgPt(t[1].clientX, t[1].clientY); return {d: Math.hypot(a[0]-b[0], a[1]-b[1]) || 1, m: [(a[0]+b[0])/2, (a[1]+b[1])/2]}; };
+mapEl.addEventListener("touchstart", e => {
+  const t = e.touches;
+  // Carte de France ou d'une académie : pincer ouvre le département sous les doigts
+  if (!zoomed){
+    if (t.length < 2) return;
+    e.preventDefault(); geste = {ignore: true};
+    const m = [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+    const el = document.elementFromPoint(m[0], m[1]);
+    if (el && el.matches("#map path.dep")){ tip.hidden = true; el.dispatchEvent(new MouseEvent("click", {bubbles: true})); }
+    return;
+  }
+  if (t.length >= 2){ e.preventDefault(); geste = {deux: true, ...deuxDoigts(t), s: {...PZ}, bouge: true}; gesteDebut(); }
+  else if (t.length === 1 && PZ.k > 1) geste = {deux: false, p: svgPt(t[0].clientX, t[0].clientY), s: {...PZ}, bouge: false};
+}, {passive: false});
+mapEl.addEventListener("touchmove", e => {
+  if (!geste) return;
+  if (geste.ignore){ e.preventDefault(); return; }
+  const t = e.touches;
+  if (geste.deux && t.length >= 2){
+    e.preventDefault();
+    const g = deuxDoigts(t);
+    pzAutour(geste.s, geste.m, g.m, geste.s.k * g.d / geste.d);
+  } else if (!geste.deux && t.length === 1){
+    const p = svgPt(t[0].clientX, t[0].clientY), dx = p[0] - geste.p[0], dy = p[1] - geste.p[1];
+    if (!geste.bouge && Math.hypot(dx, dy) < 6) return;
+    e.preventDefault();
+    if (!geste.bouge){ geste.bouge = true; gesteDebut(); }
+    pzSet(geste.s.k, geste.s.x + dx, geste.s.y + dy);
+  }
+}, {passive: false});
+const toucheFin = e => {
+  if (!geste) return;
+  if (geste.ignore){ if (!e.touches.length) geste = null; noClick = Date.now() + 500; return; }
+  if (geste.bouge) noClick = Date.now() + 500;
+  if (geste.deux && e.touches.length === 1 && PZ.k > 1){
+    const t = e.touches[0]; geste = {deux: false, p: svgPt(t.clientX, t.clientY), s: {...PZ}, bouge: true}; return;
+  }
+  if (!e.touches.length){ const b = geste.bouge; geste = null; if (b) gesteFin(); }
+};
+mapEl.addEventListener("touchend", toucheFin);
+mapEl.addEventListener("touchcancel", toucheFin);
+mapEl.addEventListener("gesturestart", e => e.preventDefault());
+mapEl.style.touchAction = "pan-x pan-y";
+mapEl.addEventListener("wheel", e => {
+  if (!zoomed || !e.ctrlKey) return;
+  e.preventDefault();
+  const p = svgPt(e.clientX, e.clientY);
+  if (gCity.attr("display") !== "none") gesteDebut();
+  pzAutour(PZ, p, p, PZ.k * Math.exp(-Math.max(-50, Math.min(50, e.deltaY)) * 0.01));
+  clearTimeout(pzTimer); pzTimer = setTimeout(gesteFin, 160);
+}, {passive: false});
+mapEl.addEventListener("mousedown", e => {
+  if (!zoomed || PZ.k === 1 || e.button !== 0) return;
+  const p0 = svgPt(e.clientX, e.clientY), s0 = {...PZ}; let bouge = false;
+  const mv = ev => {
+    const p = svgPt(ev.clientX, ev.clientY), dx = p[0] - p0[0], dy = p[1] - p0[1];
+    if (!bouge && Math.hypot(dx, dy) < 5) return;
+    if (!bouge){ bouge = true; gesteDebut(); mapEl.classList.add("drag"); }
+    pzSet(s0.k, s0.x + dx, s0.y + dy);
+  };
+  const up = () => {
+    removeEventListener("mousemove", mv); removeEventListener("mouseup", up); mapEl.classList.remove("drag");
+    if (bouge){ noClick = Date.now() + 300; gesteFin(); }
+  };
+  addEventListener("mousemove", mv); addEventListener("mouseup", up);
+});
+pzBtn.onclick = () => { pzSet(1, 0, 0); drawCities(); };
+
 // --- Zoom sur un département
 const backBtn = document.getElementById("back-fr");
 const mapTitle = document.getElementById("maptitle");
@@ -659,14 +779,14 @@ function comPaths(g, feats, gen){
     .attr("class","com").attr("d", gen)
     .on("mouseenter", (ev,f) => showComTip(ev, f.properties.c))
     .on("mousemove", moveTip)
-    .on("mouseleave", () => tip.hidden = true)
-    .on("click", (ev,f) => highlight(f.properties.c));
+    .on("mouseleave", tipOut)
+    .on("click", (ev,f) => { if (Date.now() < noClick) return; highlight(f.properties.c); });
 }
 
 function zoomTo(code, hl = null){
   tip.hidden = true;
   const d = DATA.deps[code]; if (!d) return;
-  zoomed = code; zoomedGrp = null; drawGrpLines();
+  zoomed = code; zoomedGrp = null; drawGrpLines(); pzSet(1, 0, 0);
   depSel.value = code;
   const feats = comFeatures(code);
   zg.attr("display","none");
@@ -700,7 +820,7 @@ function zoomTo(code, hl = null){
 }
 
 function zoomOut(){
-  tip.hidden = true; zoomed = null; zoomedGrp = null; hlCode = null; depSel.value = "";
+  tip.hidden = true; zoomed = null; zoomedGrp = null; hlCode = null; depSel.value = ""; pzSet(1, 0, 0);
   gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
   gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
   gDeps.selectAll("path").classed("dim", false);
@@ -718,7 +838,7 @@ function zoomGroup(n){
   const deps = GROUPS[VIEW][n]; if (!deps) return;
   const md = deps.filter(d => d.length < 3);
   if (deps.length === 1 || !md.length) return zoomTo(deps[0]);
-  tip.hidden = true; zoomed = null; zoomedGrp = n; hlCode = null; depSel.value = "";
+  tip.hidden = true; zoomed = null; zoomedGrp = n; hlCode = null; depSel.value = ""; pzSet(1, 0, 0);
   gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
   gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
   const fc = {type: "FeatureCollection", features: metro.features.filter(f => md.includes(f.properties.c))};
