@@ -131,6 +131,15 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .legend .li{display:inline-flex;align-items:center;margin-right:18px;font-size:13px;color:var(--fg)}
 .tip .ex{margin-top:6px}
 .tip .tm b.sp{font-weight:500;white-space:normal;max-width:24ch;text-align:right}
+.tip .tm b.nm{font-weight:400;color:var(--muted);font-size:12px;max-width:30ch}
+.tip .tm span.lyn{color:var(--fg);font-size:12px;max-width:22ch}
+.lyc th button{all:unset;cursor:pointer;font-weight:500;color:var(--muted)}
+.lyc th button[aria-pressed="true"]{color:var(--accent);font-weight:600}
+.lyc th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lyc td small{white-space:nowrap}
+.lyc td .n{white-space:normal}
+.lyc-n{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+.lyc .lnk{font-size:13px}
 .tip{max-width:min(92vw,380px)}
 .tip .bl{margin-top:6px;font-size:13px;font-weight:600}
 #map .cities{pointer-events:none}
@@ -147,6 +156,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .top5 td b{font-weight:600;font-size:15px}
 .top5 tr[data-c]{cursor:pointer}
 .top5 tr[data-c]:hover .n,.top5 tr.on .n{color:var(--accent)}
+.top5 tr.on td{background:var(--accent-soft)}
 .top5 tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media (max-width:560px){.top5{padding:10px}.top5 td small.m2{display:none}.top5 th,.top5 td{padding-left:8px}.top5 td b{font-size:14px;white-space:nowrap}}
 .tip .tm{display:grid;grid-template-columns:auto auto;gap:1px 12px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);font-size:12px}
@@ -271,6 +281,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
       <div class="drom" id="drom"></div>
       <div class="legend" id="legend"></div>
       <div class="top5" id="top5" hidden></div>
+      <div class="top5 lyc" id="lyc" hidden></div>
     </div>
 
     <div class="panel">
@@ -315,6 +326,9 @@ const SERV = __SERVICES__;
 const ZONES = __ZONES__;
 // Barres d'entrée du mouvement inter, PLP maths-sciences, par académie : {annee: [barre, nombre d'entrants]}
 const BARRES = __BARRES__;
+// Lycées publics à voie professionnelle (annuaire de l'éducation) : coms = code commune -> [identifiants] ;
+// etab = identifiant -> [nom, 0 lycée pro | 1 polyvalent, élèves en voie pro, IPS voie pro, réussite bac pro %, valeur ajoutée]
+const LYCEES = __LYCEES__;
 let COUCHE = "prix", BAN = Math.max(...BARRES.annees), MONB = null, BPAL = null;
 const BAR_BREAKS = [50, 100, 200, 300, 400, 500, 700, 1000];
 const barreDe = (n, an = BAN) => { const v = BARRES.aca[n]?.[an]; return v && v[0] != null ? v[0] : null; };
@@ -348,6 +362,8 @@ let PAL = colors();
 const color = v => { if (v == null) return "var(--line)"; let i = BREAKS.findIndex(b => v < b); if (i < 0) i = BREAKS.length; return PAL[i]; };
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[-']/g," ").replace(/\barrondissement\b/,"").replace(/\s+/g," ").trim();
 
+// [lycées pro, lycées polyvalents, identifiants]
+const lyDe = ids => [ids.filter(i => LYCEES.etab[i][1] === 0).length, ids.filter(i => LYCEES.etab[i][1] === 1).length, ids];
 // Communes : [code, nom, dep, appart, maison, population]
 const COMS = DATA.coms.map(c => ({c:c[0], n:c[1].replace(/ (\d+)(er|e) Arrondissement$/, " $1$2"), d:c[2], a:c[3], m:c[4], p:c[5], a12:c[6], a3:c[7]}));
 const COMBY = {};
@@ -367,8 +383,9 @@ Object.entries(DATA.deps).forEach(([code, d]) => {
 });
 const SERV_LAB = [["médecin","médecins généralistes"],["pharmacie","pharmacies"],["école","écoles"],["collège","collèges"],["supermarché","supermarchés"],["boulangerie","boulangeries"]];
 COMS.forEach(c => { const s = SERV.coms[c.c]; if (s) c.sv = {gk: s[0], g: s[1] != null ? SERV.gares[s[1]] : null, ak: s[2], a: s[3] != null ? SERV.gares[s[3]] : null, nb: s.slice(4)}; });
-COMS.forEach(c => { c.rev = REVENUS.coms[c.c] ?? null; c.abc = INDIC.abc[c.c] || null; c.vac = INDIC.vac[c.c] ?? null; c.enc = INDIC.enc[c.c] || 0; });
-Object.entries(DATA.deps).forEach(([code, d]) => { d.rev = REVENUS.deps[code] ?? null; d.d = code; });
+COMS.forEach(c => { c.rev = REVENUS.coms[c.c] ?? null; c.abc = INDIC.abc[c.c] || null; c.vac = INDIC.vac[c.c] ?? null; c.enc = INDIC.enc[c.c] || 0; c.ly = lyDe(LYCEES.coms[c.c] || []); });
+Object.entries(DATA.deps).forEach(([code, d]) => { d.rev = REVENUS.deps[code] ?? null; d.d = code; d.ly = [0, 0]; });
+COMS.forEach(c => { const d = DATA.deps[c.d]; if (d){ d.ly[0] += c.ly[0]; d.ly[1] += c.ly[1]; } });
 // --- Découpage : départements, académies ou régions
 const ZD = ZONES.deps;
 let VIEW = "dep", zoomedGrp = null;
@@ -381,7 +398,7 @@ const grpCache = {};
 function grpData(n, v = VIEW){
   const cle = MODE + "|" + v + "|" + n;
   if (grpCache[cle]) return grpCache[cle];
-  const deps = GROUPS[v][n], o = {n: grpLabel(n, v), deps};
+  const deps = GROUPS[v][n], o = {n: grpLabel(n, v), deps, ly: [0, 1].map(i => deps.reduce((t, d) => t + DATA.deps[d].ly[i], 0))};
   for (const k of CHAMPS){
     let s = 0, w = 0;
     for (const c of COMS) if (deps.includes(c.d) && c[k] != null){ s += c[k] * c.p; w += c.p; }
@@ -549,8 +566,23 @@ const parMois = rev => Math.round(rev / 12 / 10) * 10;
 // Loyer d'un 1 ou 2 pièces : valeur location gardée (L), ou valeur courante pour les villes entières en mode Louer
 const loyer12 = o => o.L ? o.L.a12 : MODE !== "achat" ? o.a12 : null;
 const partLoyer = o => o.rev && loyer12(o) != null ? Math.round(100 * Math.round(loyer12(o) * 37 / 10) * 10 / (o.rev / 12)) : null;
-function indicHtml(o){
+// « 4 lycées pro + 3 polyvalents » ; noms des établissements pour une commune
+const nf1 = v => v.toLocaleString("fr-FR", {minimumFractionDigits: 1, maximumFractionDigits: 1});
+const lyTxt = ly => !ly[0] && !ly[1] ? "aucun" : [ly[0] ? `${ly[0]} lycée${ly[0] > 1 ? "s" : ""} pro` : "", ly[1] ? `${ly[1]} polyvalent${ly[1] > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ");
+function lyHtml(o, noms = true){
+  if (!o.ly) return "";
+  let h = `<span>Lycées publics à voie pro</span><b class="sp">${lyTxt(o.ly)}</b>`;
+  const n = o.ly[2];
+  if (noms && n && n.length){
+    h += (n.length > 5 ? n.slice(0, 4) : n).map(i => { const e = LYCEES.etab[i];
+      return `<span class="lyn">${e[0]}</span><b class="sp nm">${[e[2] != null ? e[2].toLocaleString("fr-FR") + " élèves" : "", e[3] != null ? "IPS " + nf1(e[3]) : ""].filter(Boolean).join(" · ") || "—"}</b>`; }).join("");
+    if (n.length > 5) h += `<span></span><b class="sp nm">et ${n.length - 4} autres : voir le tableau sous la carte</b>`;
+  }
+  return h;
+}
+function indicHtml(o, ly = true){
   const l = [];
+  if (ly && o.ly) l.push(lyHtml(o));
   if (o.rev != null){
     l.push(`<span>Niveau de vie médian</span><b>≈ ${parMois(o.rev).toLocaleString("fr-FR")}\u00a0€/mois</b>`);
     const p = partLoyer(o);
@@ -580,8 +612,8 @@ function tipHtml(title, sub, o, bud = true){
   if (!TACT.matches) return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>${origine(o)}
     ${alt}${loyers}${indicHtml(o)}${bud ? budLine(o) : ""}`;
   return `<button class="tip-x" type="button" aria-label="Fermer">×</button><div class="tt"><b>${title}</b> <span class="s">(${sub})</span></div>
-    <div class="v">${fmt(o[K])}/m²</div>${origine(o)}${loyers}${bud ? budLine(o) : ""}
-    <div class="tip-plus" hidden>${alt}${indicHtml(o)}</div><button class="tip-more" type="button" aria-expanded="false">Plus de détails ▾</button>`;
+    <div class="v">${fmt(o[K])}/m²</div>${origine(o)}${loyers}${o.ly ? `<div class="tm">${lyHtml(o, false)}</div>` : ""}${bud ? budLine(o) : ""}
+    <div class="tip-plus" hidden>${alt}${o.ly && o.ly[2] && o.ly[2].length ? `<div class="tm">${lyHtml(o).replace(/^.*?<\/b>/, "")}</div>` : ""}${indicHtml(o, false)}</div><button class="tip-more" type="button" aria-expanded="false">Plus de détails ▾</button>`;
 }
 const enGroupe = code => VIEW !== "dep" && !zoomed && !zoomedGrp && !!grpOf(code);
 function showGrpTip(ev, n){
@@ -591,7 +623,7 @@ function showGrpTip(ev, n){
     const note = BARRES.notes[n] ? Object.entries(BARRES.notes[n]).map(([a, x]) => `${a} : ${x}`).join(" ; ") : "";
     const st = barState(barreDe(n));
     tip.innerHTML = `<b>${grpLabel(n)}</b><div class="v">${fmtB(barreDe(n))}${barreDe(n) != null ? " pts" : ""}</div>
-      <div class="s">Barre d'entrée ${BAN} au mouvement inter, PLP maths-sciences</div><div class="tm">${hist}</div>`
+      <div class="s">Barre d'entrée ${BAN} au mouvement inter, PLP maths-sciences</div><div class="tm">${hist}</div><div class="tm">${lyHtml(grpData(n))}</div>`
       + (MONB != null ? `<div class="bl"><i class="dot ${st == null ? "nd" : "st" + st}"></i>Avec ${fmtB(MONB)} pts : entré ${ok} fois sur ${pub.length} année${pub.length > 1 ? "s" : ""} publiée${pub.length > 1 ? "s" : ""}</div>` : "")
       + (note ? `<div class="s">${note}</div>` : "") + `<div class="s" style="margin-top:4px">Cliquez pour voir ses départements</div>`;
     tip.hidden = false; moveTip(ev); return;
@@ -654,7 +686,44 @@ function topCities(dep){
     return o;
   });
 }
+// Lycées publics à voie pro du département ou de l'académie : élèves, IPS, réussite au bac pro
+let LYC_TRI = "pop", LYC_SENS = 1, LYC_TOUT = false;
+function drawLyc(){
+  const box = document.getElementById("lyc");
+  if (!zoomed && !zoomedGrp){ box.hidden = true; LYC_TOUT = false; return; }
+  const deps = zoomed ? [zoomed] : GROUPS[VIEW][zoomedGrp], ou = zoomed ? "du département" : VIEW === "aca" ? "de l'académie" : "de la région";
+  const rows = COMS.filter(c => deps.includes(c.d) && c.ly[2].length).flatMap(c => c.ly[2].map(id => ({id, c, e: LYCEES.etab[id]})));
+  box.hidden = false;
+  if (!rows.length){ box.innerHTML = `<p class="top5-t">Lycées publics à voie pro ${ou}</p><p class="empty">Aucun lycée public à voie professionnelle.</p>`; return; }
+  const v = (x, i, vide) => x.e[i] ?? vide;
+  const cle = {pop: r => -r.c.p, el: r => -v(r, 2, -1), ips: r => -v(r, 3, -1), reu: r => -v(r, 4, -1)}[LYC_TRI];
+  rows.sort((a, b) => LYC_SENS * (cle(a) - cle(b)) || a.c.n.localeCompare(b.c.n, "fr") || a.e[0].localeCompare(b.e[0], "fr"));
+  const N = 10, vis = LYC_TOUT ? rows : rows.slice(0, N), R = LYCEES.ref;
+  const th = (k, l, sm) => `<th><button type="button" data-tri="${k}" aria-pressed="${LYC_TRI === k}">${l}${LYC_TRI === k ? (LYC_SENS > 0 ? " ▾" : " ▴") : ""}</button>${sm ? `<small>${sm}</small>` : ""}</th>`;
+  const nLp = rows.filter(r => r.e[1] === 0).length;
+  box.innerHTML = `<p class="top5-t">Lycées publics à voie pro ${ou} · ${lyTxt([nLp, rows.length - nLp])}</p>
+    <div class="tw"><table><thead><tr>${th("pop", "Lycée", "par taille de ville")}${th("el", "Élèves", "voie pro")}${th("ips", "IPS", "voie pro")}${th("reu", "Bac pro", "réussite")}</tr></thead><tbody>` +
+    vis.map(r => `<tr data-c="${r.c.c}" tabindex="0"><td><span class="n">${r.e[0]}</span><small>${r.c.n} · ${r.e[1] ? "polyvalent" : "lycée pro"}</small></td>
+      <td><b>${r.e[2] != null ? r.e[2].toLocaleString("fr-FR") : "—"}</b></td>
+      <td><b>${r.e[3] != null ? nf1(r.e[3]) : "—"}</b></td>
+      <td><b>${r.e[4] != null ? Math.round(r.e[4]) + "\u00a0%" : "—"}</b>${r.e[5] != null ? `<small>VA ${r.e[5] > 0 ? "+" : r.e[5] < 0 ? "−" : ""}${Math.abs(Math.round(r.e[5]))}</small>` : ""}</td></tr>`).join("") +
+    `</tbody></table></div>` +
+    (rows.length > N ? `<button class="lnk" id="lyc-tout" type="button">${LYC_TOUT ? "Afficher moins de lycées ▴" : `Voir les ${rows.length} lycées ▾`}</button>` : "") +
+    `<p class="lyc-n">Élèves : voie professionnelle, rentrée ${R.eff_an}. IPS : indice de position sociale des élèves de la voie pro, rentrée ${R.ips_an} ; moyenne de ces lycées en France : ${nf1(R.ips)}. Plus il est bas, plus les familles sont modestes. Bac pro : taux de réussite ${R.res_an} ; VA (valeur ajoutée) : écart en points avec le taux attendu pour des élèves de même profil.</p>`;
+  box.querySelectorAll("th button").forEach(b => b.onclick = () => {
+    if (LYC_TRI === b.dataset.tri) LYC_SENS = -LYC_SENS; else { LYC_TRI = b.dataset.tri; LYC_SENS = 1; }
+    drawLyc(); box.querySelector(`th button[data-tri="${LYC_TRI}"]`).focus();
+  });
+  const tout = document.getElementById("lyc-tout");
+  if (tout) tout.onclick = () => { LYC_TOUT = !LYC_TOUT; drawLyc(); };
+  box.querySelectorAll("tr[data-c]").forEach(tr => {
+    tr.classList.toggle("on", tr.dataset.c === hlCode);
+    tr.onclick = () => { const c = COMBY[tr.dataset.c]; if (zoomed === c.d) highlight(c.c); else zoomTo(c.d, c.c); showMap(); };
+    tr.onkeydown = e => { if (e.key === "Enter") tr.onclick(); };
+  });
+}
 function drawTop5(){
+  drawLyc();
   const box = document.getElementById("top5");
   document.getElementById("drom").hidden = !!(zoomed || zoomedGrp);
   if (!zoomed && !zoomedGrp){ box.hidden = true; return; }
@@ -972,7 +1041,7 @@ function highlight(code){
   hlCode = code;
   d3.selectAll("path.com").classed("hl", f => f.properties.c === code);
   if (code) d3.selectAll("path.com.hl").raise();
-  document.querySelectorAll("#d-list li[data-c], #top5 tr[data-c]").forEach(li => li.classList.toggle("on", li.dataset.c === code));
+  document.querySelectorAll("#d-list li[data-c], #top5 tr[data-c], #lyc tr[data-c]").forEach(li => li.classList.toggle("on", li.dataset.c === code));
 }
 
 // --- Légende
@@ -1155,7 +1224,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Barres d'entrée inter (mode Académies) : barème du dernier entrant au mouvement inter-académique, PLP mathématiques-sciences physiques. 2024 à 2026 : <a href="https://info-mutations.phm.education.gouv.fr/cmpmo-front/mvt/comparateur/inter" target="_blank" rel="noopener">comparateur officiel du ministère</a>, avec le nombre d'entrants ; 2022 et 2023 : <a href="https://mutations.sudeducation.org/plp/" target="_blank" rel="noopener">bilan de SUD éducation</a>. Pas de barre publiée quand il y a eu au plus un entrant. « Mon barème » n'est enregistré nulle part.</li><li>Régions et académies : <a href="https://www.data.gouv.fr/datasets/referentiel-geographique-francais-communes-unites-urbaines-aires-urbaines-departements-academies-regions" target="_blank" rel="noopener">référentiel géographique</a> du ministère de l'Enseignement supérieur et de la Recherche. La valeur d'une région ou d'une académie est la moyenne de ses communes, pondérée par la population (aussi en mode Acheter).</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Barres d'entrée inter (mode Académies) : barème du dernier entrant au mouvement inter-académique, PLP mathématiques-sciences physiques. 2024 à 2026 : <a href="https://info-mutations.phm.education.gouv.fr/cmpmo-front/mvt/comparateur/inter" target="_blank" rel="noopener">comparateur officiel du ministère</a>, avec le nombre d'entrants ; 2022 et 2023 : <a href="https://mutations.sudeducation.org/plp/" target="_blank" rel="noopener">bilan de SUD éducation</a>. Pas de barre publiée quand il y a eu au plus un entrant. « Mon barème » n'est enregistré nulle part.</li><li>Régions et académies : <a href="https://www.data.gouv.fr/datasets/referentiel-geographique-francais-communes-unites-urbaines-aires-urbaines-departements-academies-regions" target="_blank" rel="noopener">référentiel géographique</a> du ministère de l'Enseignement supérieur et de la Recherche. La valeur d'une région ou d'une académie est la moyenne de ses communes, pondérée par la population (aussi en mode Acheter).</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Lycées publics à voie pro : <a href="https://data.education.gouv.fr/explore/dataset/fr-en-annuaire-education/" target="_blank" rel="noopener">annuaire de l'éducation</a> (ministère de l'Éducation nationale), données du ${LYCEES.maj.split("-").reverse().join("/")}. Lycées professionnels, et lycées polyvalents qui ont une voie professionnelle (section d'enseignement professionnel). Établissements publics de l'Éducation nationale seulement : les lycées privés, agricoles, maritimes et militaires ne sont pas comptés. Pour chaque lycée, données ouvertes du même ministère : <a href="https://data.education.gouv.fr/explore/dataset/fr-en-lycee_pro-effectifs-niveau-sexe-lv/" target="_blank" rel="noopener">élèves de la voie professionnelle</a> (rentrée ${LYCEES.ref.eff_an}), <a href="https://data.education.gouv.fr/explore/dataset/fr-en-ips-lycees-ap2023/" target="_blank" rel="noopener">indice de position sociale</a> de la voie professionnelle (rentrée ${LYCEES.ref.ips_an}) et <a href="https://data.education.gouv.fr/explore/dataset/fr-en-indicateurs-de-resultat-des-lycees-pro_v2/" target="_blank" rel="noopener">taux de réussite au bac pro et valeur ajoutée</a> (session ${LYCEES.ref.res_an}).</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
 
 
 // --- Comparer deux communes
@@ -1168,6 +1237,7 @@ function cmpPool(){
       const arr = COMS.filter(c => c.d === d && c.n.startsWith(n + " "));
       return {...g, c: null, d, n: `${n} (toute la ville)`, s: n, sub: "toute la ville · ", k: norm(n),
               rev: REVENUS.coms[vc] ?? null, abc: INDIC.abc[arr[0].c] || null, enc: arr.every(c => c.enc === 2) ? 2 : 0, vac: null,
+              ly: [arr.reduce((t, c) => t + c.ly[0], 0), arr.reduce((t, c) => t + c.ly[1], 0), arr.flatMap(c => c.ly[2])],
               sv: (() => { const s = arr.map(c => c.sv).filter(Boolean); if (!s.length) return null;
                 const g = s.reduce((m, x) => x.gk != null && (m == null || x.gk < m.gk) ? x : m, null), a = s.reduce((m, x) => x.ak != null && (m == null || x.ak < m.ak) ? x : m, null);
                 return {gk: g && g.gk, g: g && g.g, ak: a && a.ak, a: a && a.a, nb: SERV_LAB.map((_, i) => s.reduce((t, x) => t + x.nb[i], 0))}; })()};
@@ -1206,6 +1276,7 @@ function drawCmp(){
     TYPES.map(([k,l,sf]) => `<tr><td>${l}<small>${sf} m²${MODE === "achat" ? ", prix estimé" : ", par mois"}</small></td><td><b>${dot(A,k)}${eur(A[k], sf)}</b></td><td><b>${dot(B,k)}${eur(B[k], sf)}</b>${cmpDiff(A[k], B[k], sf)}</td></tr>`).join("") +
     `<tr><td>Niveau de vie médian<small>par mois, INSEE 2021</small></td><td>${A.rev != null ? parMois(A.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td><td>${B.rev != null ? parMois(B.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td></tr>
      ${MODE === "achat" ? "" : `<tr><td>Loyer d'un 1 ou 2 pièces<small>part du niveau de vie</small></td><td>${partLoyer(A) != null ? partLoyer(A) + "\u00a0%" : "—"}</td><td>${partLoyer(B) != null ? partLoyer(B) + "\u00a0%" : "—"}</td></tr>`}
+     <tr><td>Lycées publics à voie pro<small>lycées pro et polyvalents</small></td><td>${A.ly ? A.ly[0] + A.ly[1] : "—"}${A.ly ? `<small>${lyTxt(A.ly)}</small>` : ""}</td><td>${B.ly ? B.ly[0] + B.ly[1] : "—"}${B.ly ? `<small>${lyTxt(B.ly)}</small>` : ""}</td></tr>
     </tbody><tbody><tr class="tg"><td colspan="3"><button class="lnk" id="cmp-plus" aria-expanded="${CMP_PLUS}"></button></td></tr></tbody>
     <tbody class="more"${CMP_PLUS ? "" : " hidden"}>
      <tr><td>Appartement<small>prix au m²</small></td><td>${fmt(A.a)}</td><td>${fmt(B.a)}</td></tr>
