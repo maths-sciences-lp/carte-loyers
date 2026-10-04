@@ -108,7 +108,13 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .lnk:hover{text-decoration:underline}
 .lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mapwrap{position:relative}
-.pz-reset{position:absolute;top:6px;right:6px;z-index:2;font-size:13px;padding:7px 12px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.pz-reset{position:absolute;top:6px;right:56px;z-index:2;font-size:13px;padding:7px 12px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.pz-ctl{position:absolute;top:6px;right:6px;z-index:2;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.12);overflow:hidden}
+.pz-ctl button{font:inherit;font-size:22px;font-weight:500;line-height:1;width:42px;height:42px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.pz-ctl button+button{border-top:1px solid var(--line)}
+.pz-ctl button:hover:not(:disabled){background:var(--accent-soft);color:var(--accent)}
+.pz-ctl button:disabled{color:var(--line);cursor:default}
+.pz-ctl button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
 .pz-hint{margin:6px 0 0;font-size:12px;color:var(--muted)}
 #map.drag{cursor:grabbing}
 #map.drag path{pointer-events:none}
@@ -303,7 +309,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <label for="bar-mon">Mon barème</label><input id="bar-mon" type="number" inputmode="decimal" min="0" max="5000" step="0.1" placeholder="ex. 300">
         <span class="h">points · barème du dernier entrant au mouvement inter</span>
       </div>
-      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg><button class="back pz-reset" id="pz-reset" type="button" hidden>↺ Tout le département</button></div>
+      <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg><div class="pz-ctl" id="pz-ctl" hidden><button type="button" id="pz-plus" aria-label="Agrandir la carte">+</button><button type="button" id="pz-moins" aria-label="Réduire la carte">−</button></div><button class="back pz-reset" id="pz-reset" type="button" hidden>↺ Tout le département</button></div>
       <p class="pz-hint" id="pz-hint" hidden></p>
       <div class="drom" id="drom"></div>
       <div class="legend" id="legend"></div>
@@ -839,6 +845,7 @@ function drawTop5(){
 
 // --- Agrandir la carte d'un département : deux doigts, pincement du pavé tactile ou Ctrl + molette ; glisser pour se déplacer
 const mapEl = svg.node(), pzBtn = document.getElementById("pz-reset"), pzHint = document.getElementById("pz-hint");
+const pzCtl = document.getElementById("pz-ctl"), pzPlus = document.getElementById("pz-plus"), pzMoins = document.getElementById("pz-moins");
 const PZ_MAX = 10;
 let noClick = 0, geste = null, pzTimer;
 function pzSet(k, x, y){
@@ -850,8 +857,9 @@ function pzSet(k, x, y){
   // Carte normale : un doigt fait défiler la page. Carte agrandie : un doigt la déplace.
   mapEl.style.touchAction = k > 1 ? "none" : "pan-x pan-y";
   pzBtn.hidden = k === 1;
+  pzCtl.hidden = !zoomed; pzMoins.disabled = k === 1; pzPlus.disabled = k >= PZ_MAX;
   pzHint.hidden = !zoomed || k > 1;
-  pzHint.textContent = TACT.matches ? "Pour agrandir, écarte deux doigts sur la carte." : "Pour agrandir : pince le pavé tactile, ou Ctrl + molette.";
+  pzHint.textContent = TACT.matches ? "Pour agrandir, écarte deux doigts sur la carte ou touche +." : "Pour agrandir : bouton +, pincement du pavé tactile ou Ctrl + molette ; puis fais glisser la carte.";
 }
 const svgPt = (cx, cy) => { const r = mapEl.getBoundingClientRect(); return [(cx - r.left) * W / r.width, (cy - r.top) * H / r.height]; };
 const gesteDebut = () => { tip.hidden = true; gCity.attr("display", "none"); };
@@ -926,6 +934,10 @@ mapEl.addEventListener("mousedown", e => {
   addEventListener("mousemove", mv); addEventListener("mouseup", up);
 });
 pzBtn.onclick = () => { pzSet(1, 0, 0); drawCities(); };
+// Boutons + et − : agrandir ou réduire autour du centre de la carte visible
+const pzPas = f => { const c = [W / 2, H / 2]; tip.hidden = true; pzAutour(PZ, c, c, PZ.k * f); drawCities(); };
+pzPlus.onclick = () => pzPas(1.6);
+pzMoins.onclick = () => pzPas(1 / 1.6);
 
 // --- Zoom sur un département
 const backBtn = document.getElementById("back-fr");
