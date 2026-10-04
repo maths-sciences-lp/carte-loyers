@@ -61,7 +61,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 #map path.com:hover{stroke:var(--hover);stroke-width:1.5}
 #map path.com.hl{stroke:var(--mark);stroke-width:3}
 [hidden]{display:none!important}
-.bud-cities{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.bud-cities .bc-t:first-child{margin-top:0}
 .bc-t{margin:6px 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .cchip{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer;font-variant-numeric:tabular-nums}
@@ -85,6 +85,8 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .cmp td:first-child,.cmp th:first-child{text-align:left;padding-left:0}
 .cmp td b{font-weight:600;font-size:15px;white-space:nowrap}
 .cmp tr.act td{border-top:0;padding-top:8px}
+.cmp tr.tg td{text-align:left;padding:2px 0}
+.cmp tr.tg .lnk{padding:10px 0;font-size:14px}
 .lnk{all:unset;cursor:pointer;color:var(--accent);font-size:13px;display:inline-block;padding:8px 0}
 .lnk:hover{text-decoration:underline}
 .lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -123,7 +125,7 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .tip{max-width:min(92vw,380px)}
 .tip .bl{margin-top:6px;font-size:13px;font-weight:600}
 #map .cities{pointer-events:none}
-.top5{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+.top5{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-top:14px}
 .top5-t{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .tw{overflow-x:auto}
 .top5 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
@@ -163,7 +165,11 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .tip .s{color:var(--muted)}
 h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
 .lab{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
-#q{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+#q{width:100%;font:inherit;font-size:16px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.srch{margin-top:16px;max-width:460px}
+.list.srch-l{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:2px 12px 4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:6;max-height:60vh;overflow-y:auto}
+.srch-l li.click{padding:9px 0}
+.srch-l li.click:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
 .list{list-style:none;margin:10px 0 0;padding:0}
 .list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 14px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .list li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -195,6 +201,10 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
       </div>
       <h1 id="h1">Loyers au m² en France</h1>
       <p class="lede" id="lede">Loyer mensuel charges comprises, en euros par m², estimé à partir des annonces de location. Chaque département montre la moyenne de ses communes, pondérée par leur population.</p>
+      <div class="srch" id="srch" role="search">
+        <label class="lab" for="q">Chercher une commune</label>
+        <div class="ac"><input id="q" type="search" placeholder="Ex. Rouen, Nantes, Lyon 3e…" autocomplete="off" aria-controls="res" aria-expanded="false"><ul class="list srch-l" id="res" hidden></ul></div>
+      </div>
     </div>
     <div class="seg" id="k-seg" role="group" aria-label="Type de logement">
       <button id="bt-a" aria-pressed="true" data-k="a">Appartement</button>
@@ -229,7 +239,6 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
       </div>
     </div>
     <p class="bud-sum" id="bud-sum"></p>
-    <div class="bud-cities" id="bud-cities" hidden></div>
   </section>
 
   <div class="grid">
@@ -248,13 +257,14 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <label for="bar-mon">Mon barème</label><input id="bar-mon" type="number" inputmode="decimal" min="0" max="5000" step="0.1" placeholder="ex. 300">
         <span class="h">points · barème du dernier entrant au mouvement inter</span>
       </div>
-      <div class="top5" id="top5" hidden></div>
       <div class="mapwrap"><canvas id="cv" hidden></canvas><svg id="map" viewBox="0 0 640 620" role="img" aria-label="Carte des départements colorés selon le loyer ou le prix de vente au m²"></svg></div>
       <div class="drom" id="drom"></div>
       <div class="legend" id="legend"></div>
+      <div class="top5" id="top5" hidden></div>
     </div>
 
     <div class="panel">
+      <div class="card bud-cities" id="bud-cities" hidden></div>
       <div class="card cmp" id="cmp">
         <h2>Comparer deux communes</h2>
         <div class="cmp-in">
@@ -262,11 +272,6 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
           <div class="ac"><label class="lab" for="cmp-b">Commune 2</label><input id="cmp-b" type="search" autocomplete="off" placeholder="Ex. Montpellier"><ul class="acl" id="cmp-b-l" hidden></ul></div>
         </div>
         <div class="tw" id="cmp-t"></div>
-      </div>
-      <div class="card">
-        <label class="lab" for="q">Chercher une commune</label>
-        <input id="q" type="search" placeholder="Ex. Rouen, Nantes, Lyon 3e…" autocomplete="off">
-        <ul class="list" id="res"></ul>
       </div>
       <div class="card" id="detail">
         <h2 id="d-title">Classement des départements</h2>
@@ -621,6 +626,7 @@ function topCities(dep){
 }
 function drawTop5(){
   const box = document.getElementById("top5");
+  document.getElementById("drom").hidden = !!(zoomed || zoomedGrp);
   if (!zoomed && !zoomedGrp){ box.hidden = true; return; }
   const d = zoomed ? DATA.deps[zoomed] : grpData(zoomedGrp), zone = zoomed ? "du département" : VIEW === "aca" ? "de l'académie" : "de la région";
   const nbTxt = zoomed ? `${mapTitle.dataset.n} communes` : `${GROUPS[VIEW][zoomedGrp].length} départements`;
@@ -839,7 +845,7 @@ salIn.addEventListener("input", () => {
   BUD.v = BUD_M.loc.v = v; budV.value = v;
   budR.value = Math.min(+budR.max, Math.max(+budR.min, v)); syncRange(); budChanged();
 });
-document.getElementById("bud-on").onclick = () => { if (COUCHE !== "prix") setCouche("prix"); BUD.on = true; applyBudget(); if (matchMedia("(max-width:860px)").matches) showMap(); };
+document.getElementById("bud-on").onclick = () => { if (COUCHE !== "prix") setCouche("prix"); BUD.on = true; applyBudget(); showMap(); };
 document.getElementById("bud-off").onclick = () => { BUD.on = false; applyBudget(); };
 
 function highlight(code){
@@ -957,25 +963,37 @@ function showMap(){
 
 // --- Recherche
 const q = document.getElementById("q"), res = document.getElementById("res");
+let hits = [];
+const srchOpen = o => { res.hidden = !o; q.setAttribute("aria-expanded", o); };
 function search(){
   const s = norm(q.value);
-  let head, hits;
-  if (s.length < 2){
-    head = "Les 5 plus grandes villes, pour exemple";
-    hits = COMS.filter(c=>!/^(Paris|Lyon|Marseille) \d/.test(c.n)).slice(0,5);
-  } else {
-    head = "Commune";
-    hits = COMS.filter(c => c.k.startsWith(s)).concat(COMS.filter(c => !c.k.startsWith(s) && c.k.includes(s))).slice(0,8);
-  }
-  res.innerHTML = hits.length ? `<li class="h" style="border:0"><span>${head}</span><span>Appart.</span><span class="x">Maison</span></li>` + hits.map(row).join("")
+  if (s.length < 2){ hits = []; srchOpen(false); return; }
+  hits = COMS.filter(c => c.k.startsWith(s)).concat(COMS.filter(c => !c.k.startsWith(s) && c.k.includes(s))).slice(0,8);
+  res.innerHTML = hits.length ? `<li class="h" style="border:0"><span>Commune</span><span>Appart.</span><span class="x">Maison</span></li>` + hits.map(row).join("")
     : `<li class="h" style="border:0"><span>Aucune commune trouvée. Vérifiez l'orthographe.</span></li>`;
-  res.querySelectorAll("li[data-c]").forEach(li => {
-    li.onclick = () => { const c = COMBY[li.dataset.c]; zoomTo(c.d, c.c); showMap(); };
-    li.onkeydown = e => { if (e.key === "Enter") li.onclick(); };
+  srchOpen(true);
+  const items = [...res.querySelectorAll("li[data-c]")];
+  items.forEach((li, i) => {
+    li.onmousedown = e => e.preventDefault();
+    li.onclick = () => pickCom(COMBY[li.dataset.c]);
+    li.onkeydown = e => {
+      if (e.key === "Enter") li.onclick();
+      else if (e.key === "ArrowDown"){ e.preventDefault(); (items[i+1] || li).focus(); }
+      else if (e.key === "ArrowUp"){ e.preventDefault(); (items[i-1] || q).focus(); }
+      else if (e.key === "Escape"){ q.focus(); srchOpen(false); }
+    };
   });
 }
+function pickCom(c){ q.value = c.n; srchOpen(false); q.blur(); zoomTo(c.d, c.c); showMap(); }
 const row = c => `<li class="click" data-c="${c.c}" tabindex="0"><span class="n">${c.n} <span class="d">${c.d}</span></span><span>${fmt(c.a)}</span><span class="x">${fmt(c.m)}</span></li>`;
 q.addEventListener("input", search);
+q.addEventListener("focus", () => { if (hits.length) srchOpen(true); });
+q.addEventListener("keydown", e => {
+  if (e.key === "Enter" && hits.length){ e.preventDefault(); pickCom(hits[0]); }
+  else if (e.key === "ArrowDown" && hits.length){ e.preventDefault(); srchOpen(true); res.querySelector("li[data-c]").focus(); }
+  else if (e.key === "Escape") srchOpen(false);
+});
+document.getElementById("srch").addEventListener("focusout", e => { if (!document.getElementById("srch").contains(e.relatedTarget)) srchOpen(false); });
 
 // --- Rendu
 function render(){
@@ -1043,6 +1061,7 @@ function findCom(s){
   return pool.filter(c => c.k.startsWith(s)).concat(pool.filter(c => !c.k.startsWith(s) && c.k.includes(s))).slice(0,6);
 }
 const CMP = [COMBY["33063"], COMBY["34172"]];
+let CMP_PLUS = false;
 function cmpDiff(a, b, sf){
   if (a == null || b == null) return "";
   const ea = montant(a, sf), eb = montant(b, sf), d = eb - ea, p = Math.round((b/a - 1)*100);
@@ -1065,11 +1084,13 @@ function drawCmp(){
   box.innerHTML = `<p class="cmp-lead">${lead}</p><table>
     <thead><tr><th></th><th>${nA}<small>${dn(A)}</small></th><th>${nB}<small>${dn(B)}</small></th></tr></thead><tbody>` +
     TYPES.map(([k,l,sf]) => `<tr><td>${l}<small>${sf} m²${MODE === "achat" ? ", prix estimé" : ", par mois"}</small></td><td><b>${dot(A,k)}${eur(A[k], sf)}</b></td><td><b>${dot(B,k)}${eur(B[k], sf)}</b>${cmpDiff(A[k], B[k], sf)}</td></tr>`).join("") +
-    `<tr><td>Appartement<small>prix au m²</small></td><td>${fmt(A.a)}</td><td>${fmt(B.a)}</td></tr>
+    `<tr><td>Niveau de vie médian<small>par mois, INSEE 2021</small></td><td>${A.rev != null ? parMois(A.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td><td>${B.rev != null ? parMois(B.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td></tr>
+     ${MODE === "achat" ? "" : `<tr><td>Loyer d'un 1 ou 2 pièces<small>part du niveau de vie</small></td><td>${partLoyer(A) != null ? partLoyer(A) + "\u00a0%" : "—"}</td><td>${partLoyer(B) != null ? partLoyer(B) + "\u00a0%" : "—"}</td></tr>`}
+    </tbody><tbody><tr class="tg"><td colspan="3"><button class="lnk" id="cmp-plus" aria-expanded="${CMP_PLUS}"></button></td></tr></tbody>
+    <tbody class="more"${CMP_PLUS ? "" : " hidden"}>
+     <tr><td>Appartement<small>prix au m²</small></td><td>${fmt(A.a)}</td><td>${fmt(B.a)}</td></tr>
      <tr><td>Maison<small>prix au m²</small></td><td>${fmt(A.m)}</td><td>${fmt(B.m)}</td></tr>
      <tr><td>Habitants</td><td>${A.p.toLocaleString("fr-FR")}</td><td>${B.p.toLocaleString("fr-FR")}</td></tr>
-     <tr><td>Niveau de vie médian<small>par mois, INSEE 2021</small></td><td>${A.rev != null ? parMois(A.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td><td>${B.rev != null ? parMois(B.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td></tr>
-     ${MODE === "achat" ? "" : `<tr><td>Loyer d'un 1 ou 2 pièces<small>part du niveau de vie</small></td><td>${partLoyer(A) != null ? partLoyer(A) + "\u00a0%" : "—"}</td><td>${partLoyer(B) != null ? partLoyer(B) + "\u00a0%" : "—"}</td></tr>`}
      <tr><td>Académie</td><td>${ZD[A.d]?.[0] || "—"}</td><td>${ZD[B.d]?.[0] || "—"}</td></tr>
      <tr><td>Région</td><td>${ZD[A.d]?.[1] || "—"}</td><td>${ZD[B.d]?.[1] || "—"}</td></tr>
      <tr><td>Tension du marché<small>zone A bis à C</small></td><td>${A.abc || "—"}</td><td>${B.abc || "—"}</td></tr>
@@ -1078,9 +1099,14 @@ function drawCmp(){
      <tr><td>Grande gare nationale</td><td>${gareTxt(A, "a")}</td><td>${gareTxt(B, "a")}</td></tr>
      ${SERV_LAB.map(([, pl], i) => `<tr><td>${pl[0].toUpperCase() + pl.slice(1)}<small>sur place, INSEE 2025</small></td><td>${A.sv ? A.sv.nb[i].toLocaleString("fr-FR") : "—"}</td><td>${B.sv ? B.sv.nb[i].toLocaleString("fr-FR") : "—"}</td></tr>`).join("")}
      <tr><td>Logements privés vides</td><td>${A.vac != null ? A.vac.toLocaleString("fr-FR") + "\u00a0%" : "—"}</td><td>${B.vac != null ? B.vac.toLocaleString("fr-FR") + "\u00a0%" : "—"}</td></tr>
+    </tbody><tbody>
      <tr class="act"><td></td><td><button class="lnk" data-i="0">Voir sur la carte</button></td><td><button class="lnk" data-i="1">Voir sur la carte</button></td></tr>
     </tbody></table>`;
   box.querySelectorAll("button[data-i]").forEach(b => b.onclick = () => { const c = CMP[+b.dataset.i]; zoomTo(c.d, c.c); showMap(); });
+  const tg = document.getElementById("cmp-plus"), more = box.querySelector("tbody.more");
+  const lib = () => { tg.textContent = CMP_PLUS ? "Moins de détails ▴" : "Plus de détails : prix au m², académie, gares, services… ▾"; tg.setAttribute("aria-expanded", CMP_PLUS); };
+  lib();
+  tg.onclick = () => { CMP_PLUS = !CMP_PLUS; more.hidden = !CMP_PLUS; lib(); };
 }
 [0,1].forEach(i => {
   const inp = document.getElementById(i ? "cmp-b" : "cmp-a"), list = document.getElementById(i ? "cmp-b-l" : "cmp-a-l");
