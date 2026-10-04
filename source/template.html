@@ -283,6 +283,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
         <select id="couche-sel" aria-label="Couche affichée"><option value="prix">Afficher : loyers et prix</option><option value="lycees">Afficher : lycées publics à voie pro</option></select>
         <select id="dep-sel" aria-label="Aller à un département"><option value="">Choisir un département…</option></select>
         <button class="back" id="back-fr" hidden>← France entière</button>
+        <button class="back" id="partage" type="button" hidden>Partager ce lien</button>
       </div>
       <div class="barctl" id="bar-ctl" hidden>
         <label for="bar-an">Année</label><select id="bar-an"></select>
@@ -971,6 +972,7 @@ function zoomTo(code, hl = null){
   drawTop5(); drawLegend();
   selectDep(code);
   highlight(hl);
+  majLien();
 }
 
 function zoomOut(){
@@ -985,6 +987,7 @@ function zoomOut(){
   backBtn.hidden = true; mapTitle.innerHTML = hint(); drawGrpLines();
   drawTop5(); drawBudSum(); drawLegend();
   selectDep(null);
+  majLien();
 }
 
 // Académie ou région : zoom sur ses départements
@@ -1005,6 +1008,7 @@ function zoomGroup(n){
   gRoot.transition().duration(reduceMotion ? 0 : 750).ease(d3.easeCubicInOut)
     .attr("transform", `translate(${tx},${ty}) scale(${k})`).on("end", () => { drawCities(); drawCanvas(); });
   paintDeps(); drawGrpLines(); drawBudSum(); drawTop5(); drawLegend(); selectGroup(n);
+  majLien();
 }
 function drawGrpLines(){
   gGrp.selectAll("*").remove();
@@ -1132,6 +1136,7 @@ function highlight(code){
   d3.selectAll("path.com").classed("hl", f => f.properties.c === code);
   if (code) d3.selectAll("path.com.hl").raise();
   document.querySelectorAll("#d-list li[data-c], #top5 tr[data-c], #lyc tr[data-c]").forEach(li => li.classList.toggle("on", li.dataset.c === code));
+  majLien();
 }
 
 // --- Légende
@@ -1321,6 +1326,7 @@ function setCouche(c){
   if (COUCHE !== "prix" && BUD.on){ BUD.on = false; applyBudget(); }
   paintDeps(); paintComs(); drawLegend(); drawCities(); drawLyc();
   if (!zoomed && !zoomedGrp) selectDep(null);
+  majLien();
 }
 coucheOpts();
 coucheSel.onchange = () => setCouche(coucheSel.value);
@@ -1339,6 +1345,7 @@ document.querySelectorAll("#vue-seg button").forEach(b => b.onclick = () => {
   if (COUCHE === "barres" && VIEW !== "aca") COUCHE = "prix";
   coucheOpts(); barCtl.hidden = !enBarres();
   paintDeps(); drawGrpLines(); drawLegend(); drawCities(); selectDep(null);
+  majLien();
 });
 document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
   K = b.dataset.k;
@@ -1461,9 +1468,58 @@ function setMode(m){
   document.querySelectorAll("#mode-seg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.mode === m));
   render(); search(); drawCmp();
   if (zoomed) zoomTo(zoomed, hlCode); else if (zoomedGrp) zoomGroup(zoomedGrp); else drawCities();
+  majLien();
 }
 document.querySelectorAll("#mode-seg button").forEach(b => b.onclick = () => { if (b.dataset.mode !== MODE) setMode(b.dataset.mode); });
 search(); render(); drawCities(); drawCmp();
+
+// --- Lien à partager : l'adresse garde le mode, la vue, la couche, la zone et la commune ouvertes
+// ex. #dep=76&commune=76351 ou #vue=aca&academie=Normandie&couche=barres (le barème saisi n'y est jamais mis)
+let RESTAURE = false;
+const partageBtn = document.getElementById("partage");
+function majLien(){
+  if (RESTAURE) return;
+  const p = new URLSearchParams();
+  if (MODE === "achat") p.set("mode", "achat");
+  if (VIEW !== "dep") p.set("vue", VIEW);
+  if (COUCHE !== "prix") p.set("couche", COUCHE);
+  if (zoomedGrp) p.set(VIEW === "aca" ? "academie" : "region", zoomedGrp);
+  if (zoomed) p.set("dep", zoomed);
+  if (zoomed && hlCode) p.set("commune", hlCode);
+  const h = p.toString();
+  try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
+  partageBtn.hidden = !zoomed && !zoomedGrp;
+}
+function lireLien(){
+  let p; try { p = new URLSearchParams(location.hash.slice(1)); } catch (e) { return; }
+  RESTAURE = true;
+  try {
+    const mode = p.get("mode") === "achat" ? "achat" : "loc";
+    if (mode !== MODE) setMode(mode);
+    const v = ["aca", "reg"].includes(p.get("vue")) ? p.get("vue") : "dep";
+    if (v !== VIEW) document.querySelector(`#vue-seg button[data-v="${v}"]`).click();
+    const cch = p.get("couche") === "lycees" || (p.get("couche") === "barres" && VIEW === "aca") ? p.get("couche") : "prix";
+    if (cch !== COUCHE) setCouche(cch);
+    const c = COMBY[p.get("commune")], d = p.get("dep"), g = p.get(VIEW === "aca" ? "academie" : "region");
+    if (c) zoomTo(c.d, c.c);
+    else if (d && DATA.deps[d]) zoomTo(d);
+    else if (g && GROUPS[VIEW] && GROUPS[VIEW][g]) zoomGroup(g);
+    else if (zoomed || zoomedGrp) zoomOut();
+  } finally { RESTAURE = false; }
+  majLien();
+  if (zoomed || zoomedGrp) showMap();
+}
+partageBtn.onclick = async () => {
+  majLien();
+  const nom = zoomed ? (hlCode && COMBY[hlCode] ? COMBY[hlCode].n + ", " : "") + DATA.deps[zoomed].n : zoomedGrp ? grpLabel(zoomedGrp) : "France";
+  const titre = `${nom} · ${document.getElementById("h1").textContent}`, url = location.href;
+  const dire = t => { partageBtn.textContent = t; setTimeout(() => partageBtn.textContent = "Partager ce lien", 2200); };
+  if (navigator.share && TACT.matches){ try { await navigator.share({title: titre, url}); return; } catch (e) { if (e.name === "AbortError") return; } }
+  try { await navigator.clipboard.writeText(url); dire("Lien copié ✓"); }
+  catch (e) { dire("Copiez l'adresse de la page"); }
+};
+lireLien();
+addEventListener("hashchange", lireLien);
 const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({timeRemaining: () => 8}), 300));
 const prewarm = dl => { if (!p2dStep(dl)) idle(prewarm); };
 idle(prewarm);

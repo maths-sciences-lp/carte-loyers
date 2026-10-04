@@ -4,6 +4,8 @@ Carte interactive des loyers et des prix de vente des logements en France, réal
 
 Page en ligne : https://maths-sciences-lp.github.io/carte-loyers/
 
+L'adresse de la page garde ce qui est ouvert, pour partager un lien direct : par exemple `#dep=76&commune=76351` (une commune), `#vue=aca&academie=Normandie&couche=lycees` (une académie, couche lycées) ou `#mode=achat`.
+
 ## Ce que montre la carte
 
 - le prix au m² par département et par commune (appartements, maisons) ;
