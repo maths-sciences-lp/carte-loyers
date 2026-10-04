@@ -8,6 +8,7 @@ Page en ligne : https://maths-sciences-lp.github.io/carte-loyers/
 
 - le prix au m² par département et par commune (appartements, maisons) ;
 - le loyer par mois d'un appartement de 1 ou 2 pièces (37 m²), de 3 pièces ou plus (72 m²) et d'une maison (92 m²), pour les 5 plus grandes villes de chaque département ;
+- un découpage au choix : régions, départements ou académies ;
 - un filtre « mon budget » et la comparaison de deux communes ;
 - en mode Acheter : prix de vente médian au m² et prix estimé des mêmes logements ;
 - « Je gagne… » : le budget de loyer réglé sur un tiers du salaire net ;
@@ -28,6 +29,7 @@ Le loyer par mois est calculé ainsi : prix au m² publié par la source × surf
 - Logements vacants : LOVAC (ministère, Cerema), parc privé au 1er janvier 2024.
 - Gares : « Gares de voyageurs » (SNCF, octobre 2026), distance à vol d'oiseau depuis le centre de la commune ; grande gare nationale = catégorie A. Corse et outre-mer non couverts par ce fichier.
 - Services sur place : INSEE, base permanente des équipements 2025.
+- Régions et académies : référentiel géographique du ministère de l'Enseignement supérieur et de la Recherche ; valeur d'un groupe = moyenne de ses communes pondérée par la population.
 - Loyers plafonnés : liste de service-public.gouv.fr (fiche F1314) vérifiée le 1er août 2026 ; dispositif prévu jusqu'au 24 novembre 2026, à revérifier ensuite (liste dans `preparer_indicateurs.py`).
 
 Les cartes des loyers des différentes années ne sont pas comparables entre elles (avertissement de la source).
@@ -41,6 +43,7 @@ Les fichiers de fabrication sont dans `source/` :
 - `preparer_revenus.py` (INSEE Filosofi) produit `revenus.json` ;
 - `preparer_indicateurs.py` (zonage ABC, logements vacants, encadrement) produit `indicateurs.json` (après `preparer_donnees.py`) ;
 - `preparer_services.py` (gares SNCF, équipements INSEE) produit `services.json` (après `preparer_donnees.py`) ;
+- `preparer_zones.py` (académies, régions et leurs frontières) produit `zones.json` (après `preparer_donnees.py`) ;
 - `template.html` contient la page (mise en forme et code) ;
 - `assembler.py` réunit le tout dans `index.html`.
 
@@ -51,6 +54,7 @@ python3 preparer_ventes.py
 python3 preparer_revenus.py
 python3 preparer_indicateurs.py
 python3 preparer_services.py
+python3 preparer_zones.py
 python3 assembler.py
 ```
 

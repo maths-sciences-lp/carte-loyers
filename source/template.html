@@ -39,6 +39,8 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 #map{width:100%;height:auto;display:block}
 .maphead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;min-height:34px;margin-bottom:6px}
 #maptitle{flex:1 1 240px;min-width:0}
+.seg.vue button{padding:6px 11px;font-size:13px}
+#map path.grp-line{fill:none;stroke:var(--fg);stroke-width:1.7;stroke-linecap:round;pointer-events:none;opacity:.85}
 #dep-sel{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 12px;cursor:pointer}
 #dep-sel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .maphead .t{font-family:var(--display);font-weight:700;font-size:17px}
@@ -227,6 +229,9 @@ h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 8px}
     <div class="card" id="mapcard">
       <div class="maphead">
         <span id="maptitle"><span class="h">Cliquez sur un département pour voir ses communes.</span></span>
+        <div class="seg vue" id="vue-seg" role="group" aria-label="Découpage de la carte">
+          <button data-v="reg" aria-pressed="false">Régions</button><button data-v="dep" aria-pressed="true">Départements</button><button data-v="aca" aria-pressed="false">Académies</button>
+        </div>
         <select id="dep-sel" aria-label="Aller à un département"><option value="">Choisir un département…</option></select>
         <button class="back" id="back-fr" hidden>← France entière</button>
       </div>
@@ -278,6 +283,8 @@ const REVENUS = __REVENUS__;
 const INDIC = __INDIC__;
 // Gare la plus proche (SNCF) et services sur place (INSEE, BPE 2025) : code -> [km gare, n° gare, km grande gare, n° grande gare, médecins, pharmacies, écoles, collèges, supermarchés, boulangeries]
 const SERV = __SERVICES__;
+// Académie et région de chaque département, et frontières à tracer (référentiel du ministère de l'Enseignement supérieur)
+const ZONES = __ZONES__;
 
 const REF = {a:52, m:92};
 const LABEL = {a:"appartement", m:"maison"};
@@ -318,7 +325,27 @@ Object.entries(DATA.deps).forEach(([code, d]) => {
 const SERV_LAB = [["médecin","médecins généralistes"],["pharmacie","pharmacies"],["école","écoles"],["collège","collèges"],["supermarché","supermarchés"],["boulangerie","boulangeries"]];
 COMS.forEach(c => { const s = SERV.coms[c.c]; if (s) c.sv = {gk: s[0], g: s[1] != null ? SERV.gares[s[1]] : null, ak: s[2], a: s[3] != null ? SERV.gares[s[3]] : null, nb: s.slice(4)}; });
 COMS.forEach(c => { c.rev = REVENUS.coms[c.c] ?? null; c.abc = INDIC.abc[c.c] || null; c.vac = INDIC.vac[c.c] ?? null; c.enc = INDIC.enc[c.c] || 0; });
-Object.entries(DATA.deps).forEach(([code, d]) => { d.rev = REVENUS.deps[code] ?? null; });
+Object.entries(DATA.deps).forEach(([code, d]) => { d.rev = REVENUS.deps[code] ?? null; d.d = code; });
+// --- Découpage : départements, académies ou régions
+const ZD = ZONES.deps;
+let VIEW = "dep", zoomedGrp = null;
+const GROUPS = {aca: {}, reg: {}};
+Object.entries(ZD).forEach(([d, [a, r]]) => { if (!DATA.deps[d]) return; (GROUPS.aca[a] ||= []).push(d); (GROUPS.reg[r] ||= []).push(d); });
+const grpOf = (d, v = VIEW) => v === "aca" ? ZD[d]?.[0] : v === "reg" ? ZD[d]?.[1] : null;
+const grpLabel = (n, v = VIEW) => v === "aca" ? "Académie " + (/^[AEIOUÉ]/.test(n) ? "d'" : "de ") + n : n;
+const grpCache = {};
+// Valeur d'une académie ou d'une région : moyenne de ses communes, pondérée par la population
+function grpData(n, v = VIEW){
+  const cle = MODE + "|" + v + "|" + n;
+  if (grpCache[cle]) return grpCache[cle];
+  const deps = GROUPS[v][n], o = {n: grpLabel(n, v), deps};
+  for (const k of CHAMPS){
+    let s = 0, w = 0;
+    for (const c of COMS) if (deps.includes(c.d) && c[k] != null){ s += c[k] * c.p; w += c.p; }
+    o[k] = w ? s / w : null;
+  }
+  return grpCache[cle] = o;
+}
 DATA.fr.L = {a:DATA.fr.a, m:DATA.fr.m, a12:DATA.fr.a12, a3:DATA.fr.a3}; DATA.fr.V = {...VENTES.fr};
 const basculer = o => Object.assign(o, MODE === "achat" ? o.V : o.L);
 
@@ -344,6 +371,7 @@ const proj = d3.geoConicConformal().parallels([44,49]).rotate([-3,0]).fitExtent(
 const path = d3.geoPath(proj);
 const gRoot = svg.append("g");
 const gDeps = gRoot.append("g");
+const gGrp = gRoot.append("g");
 const gComs = gRoot.append("g");
 const gLine = gRoot.append("g");
 const gOm = svg.append("g").attr("display","none");
@@ -451,7 +479,7 @@ const comFill = code => { const c = COMBY[code]; return BUD.on ? budCol(budState
 function budStats(dep){
   let n = 0, ok = 0, pop = 0, popOk = 0;
   for (const c of COMS){
-    if (dep && c.d !== dep) continue;
+    if (dep && (Array.isArray(dep) ? !dep.includes(c.d) : c.d !== dep)) continue;
     const st = budState(c[BUD.t]); if (st == null) continue;
     n++; pop += c.p; if (st === 0){ ok++; popOk += c.p; }
   }
@@ -480,6 +508,7 @@ function indicHtml(o){
     const p = partLoyer(o);
     if (MODE !== "achat" && p != null) l.push(`<span>Loyer d'un 1 ou 2 pièces</span><b>${p}\u00a0% de ce revenu</b>`);
   } else if (o.c !== undefined) l.push(`<span>Niveau de vie médian</span><b>non publié</b>`);
+  if (o.d && ZD[o.d]) l.push(`<span>Académie</span><b>${ZD[o.d][0]}</b>`);
   if (o.abc) l.push(`<span>Tension du marché</span><b>zone ${o.abc}</b>`);
   if (o.enc) l.push(`<span>Loyers plafonnés</span><b>${o.enc === 2 ? "oui" : "en partie"}</b>`);
   if (o.vac != null) l.push(`<span>Logements privés vides</span><b>${o.vac.toLocaleString("fr-FR")}\u00a0%</b>`);
@@ -500,6 +529,14 @@ function tipHtml(title, sub, o){
   return `<b>${title}</b> <span class="s">(${sub})</span><div class="v">${fmt(o[K])}/m²</div>${origine(o)}
     <div class="s">${K==="a"?"Maison":"Appartement"} : ${fmt(o[K==="a"?"m":"a"])}/m²</div>
     <div class="tm">${TYPES.map(([k,l,sf]) => `<span>${l} (${sf}\u00a0m²)</span><b>≈ ${eur(o[k], sf)}</b>`).join("")}</div>${indicHtml(o)}${budLine(o)}`;
+}
+const enGroupe = code => VIEW !== "dep" && !zoomed && !zoomedGrp && !!grpOf(code);
+function showGrpTip(ev, n){
+  const o = grpData(n), bs = BUD.on ? budStats(o.deps) : null;
+  tip.innerHTML = tipHtml(o.n, `${o.deps.length} département${o.deps.length > 1 ? "s" : ""}`, o).replace(/<div class="bl">.*<\/div>$/s, "")
+    + (bs ? `<div class="bl"><i class="dot st0"></i>${bs.ok} communes sur ${bs.n} dans ton budget</div>` : "")
+    + `<div class="s" style="margin-top:4px">Cliquez pour voir ses départements</div>`;
+  tip.hidden = false; moveTip(ev);
 }
 function showDepTip(ev, code){
   const d = DATA.deps[code]; if (!d) return;
@@ -522,15 +559,15 @@ function moveTip(ev){
 addEventListener("scroll", () => { tip.hidden = true; }, {passive: true});
 document.addEventListener("touchstart", e => { if (!e.target.closest("#map, #drom")) tip.hidden = true; }, {passive: true});
 allDeps()
-  .on("mouseenter", (ev,f) => showDepTip(ev, f.properties.c))
+  .on("mouseenter", (ev,f) => enGroupe(f.properties.c) ? showGrpTip(ev, grpOf(f.properties.c)) : showDepTip(ev, f.properties.c))
   .on("mousemove", moveTip)
   .on("mouseleave", () => tip.hidden = true)
-  .on("click", (ev,f) => zoomTo(f.properties.c));
+  .on("click", (ev,f) => enGroupe(f.properties.c) ? zoomGroup(grpOf(f.properties.c)) : zoomTo(f.properties.c));
 
 // --- Les 5 villes les plus peuplées d'un département (arrondissements de Paris, Lyon, Marseille regroupés)
 function topCities(dep){
   const KEYS = ["a","m","a12","a3"], groups = {};
-  for (const c of COMS.filter(c => c.d === dep)){
+  for (const c of COMS.filter(Array.isArray(dep) ? c => dep.includes(c.d) : c => c.d === dep)){
     const m = c.n.match(/^(Paris|Lyon|Marseille) \d/);
     const id = m ? m[1] : c.c;
     const g = groups[id] || (groups[id] = {n: m ? m[1] : c.n, c: m ? null : c.c, p: 0, s: {}, w: {}});
@@ -545,13 +582,14 @@ function topCities(dep){
 }
 function drawTop5(){
   const box = document.getElementById("top5");
-  if (!zoomed){ box.hidden = true; return; }
-  const d = DATA.deps[zoomed];
-  mapTitle.innerHTML = `<span class="t">${d.n}</span> <span class="h">· ${mapTitle.dataset.n} communes</span><br><span class="h">${MODE === "achat" ? (d.a == null && d.m == null ? "Pas de données de vente dans ce département" : `Prix médian du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")}`) : `Loyer moyen du département : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")} par mois`}</span>`;
+  if (!zoomed && !zoomedGrp){ box.hidden = true; return; }
+  const d = zoomed ? DATA.deps[zoomed] : grpData(zoomedGrp), zone = zoomed ? "du département" : VIEW === "aca" ? "de l'académie" : "de la région";
+  const nbTxt = zoomed ? `${mapTitle.dataset.n} communes` : `${GROUPS[VIEW][zoomedGrp].length} départements`;
+  mapTitle.innerHTML = `<span class="t">${d.n}</span> <span class="h">· ${nbTxt}</span><br><span class="h">${MODE === "achat" ? (d.a == null && d.m == null ? "Pas de données de vente dans ce département" : `Prix ${zoomed ? "médian" : "moyen"} ${zone} : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")}`) : `Loyer moyen ${zone} : ${TYPES.map(([k,l,sf]) => `${l.toLowerCase()} ≈ ${eur(d[k], sf)}`).join(", ")} par mois`}</span>`;
   const hab = p => p.toLocaleString("fr-FR") + " hab.";
   box.innerHTML = `<p class="top5-t">Les 5 villes les plus peuplées · ${MODE === "achat" ? "prix d'achat estimé" : "loyer par mois, charges comprises"}</p>
     <div class="tw"><table><thead><tr><th>Ville</th>${TYPES.map(([k,l,sf]) => `<th>${l}<small>${sf}\u00a0m²</small></th>`).join("")}</tr></thead><tbody>` +
-    topCities(zoomed).map((g,i) => `<tr${g.c ? ` data-c="${g.c}" tabindex="0"` : ""}>
+    topCities(zoomed || GROUPS[VIEW][zoomedGrp]).map((g,i) => `<tr${g.c ? ` data-c="${g.c}" tabindex="0"` : ""}>
       <td><span class="n">${i+1}. ${g.n}</span><small>${hab(g.p)}</small></td>` +
       TYPES.map(([k,l,sf]) => `<td><b>${BUD.on && k === BUD.t && g[k] != null ? `<i class="dot st${budState(g[k])}"></i>` : ""}${eur(g[k], sf)}</b><small class="m2">${fmt(g[k])}/m²</small></td>`).join("") + `</tr>`).join("") +
     `</tbody></table></div>`;
@@ -583,7 +621,7 @@ function comPaths(g, feats, gen){
 function zoomTo(code, hl = null){
   tip.hidden = true;
   const d = DATA.deps[code]; if (!d) return;
-  zoomed = code;
+  zoomed = code; zoomedGrp = null; drawGrpLines();
   depSel.value = code;
   const feats = comFeatures(code);
   zg.attr("display","none");
@@ -617,7 +655,7 @@ function zoomTo(code, hl = null){
 }
 
 function zoomOut(){
-  tip.hidden = true; zoomed = null; hlCode = null; depSel.value = "";
+  tip.hidden = true; zoomed = null; zoomedGrp = null; hlCode = null; depSel.value = "";
   gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
   gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
   gDeps.selectAll("path").classed("dim", false);
@@ -625,17 +663,45 @@ function zoomOut(){
   gCity.selectAll("*").remove();
   gRoot.transition().duration(reduceMotion ? 0 : 600).ease(d3.easeCubicInOut).attr("transform","translate(0,0) scale(1)").on("end", () => { drawCities(); paintDeps(); drawCanvas(); });
   zg.attr("display",null);
-  backBtn.hidden = true; mapTitle.innerHTML = HINT;
+  backBtn.hidden = true; mapTitle.innerHTML = hint(); drawGrpLines();
   drawTop5(); drawBudSum();
   selectDep(null);
 }
 
+// Académie ou région : zoom sur ses départements
+function zoomGroup(n){
+  const deps = GROUPS[VIEW][n]; if (!deps) return;
+  const md = deps.filter(d => d.length < 3);
+  if (deps.length === 1 || !md.length) return zoomTo(deps[0]);
+  tip.hidden = true; zoomed = null; zoomedGrp = n; hlCode = null; depSel.value = "";
+  gComs.selectAll("*").remove(); gLine.selectAll("*").remove();
+  gOm.attr("display","none").selectAll("*").remove(); gRoot.attr("display",null);
+  const fc = {type: "FeatureCollection", features: metro.features.filter(f => md.includes(f.properties.c))};
+  const [[x0,y0],[x1,y1]] = path.bounds(fc);
+  const k = Math.min(30, 0.92 / Math.max((x1-x0)/W, (y1-y0)/H)), tx = W/2 - k*(x0+x1)/2, ty = H/2 - k*(y0+y1)/2;
+  gDeps.selectAll("path").classed("dim", x => !md.includes(x.properties.c));
+  zg.attr("display","none"); backBtn.hidden = false; cv.hidden = true;
+  view = {p: proj, k, tx, ty, om: false};
+  gCity.selectAll("*").remove();
+  gRoot.transition().duration(reduceMotion ? 0 : 750).ease(d3.easeCubicInOut)
+    .attr("transform", `translate(${tx},${ty}) scale(${k})`).on("end", () => { drawCities(); drawCanvas(); });
+  paintDeps(); drawGrpLines(); drawBudSum(); drawTop5(); selectGroup(n);
+}
+function drawGrpLines(){
+  gGrp.selectAll("*").remove();
+  if (VIEW === "dep" || zoomed) return;
+  let d = "";
+  for (const [x1,y1,x2,y2] of ZONES.lignes[VIEW]){ const a = proj([x1,y1]), b = proj([x2,y2]); d += `M${a[0].toFixed(1)},${a[1].toFixed(1)}L${b[0].toFixed(1)},${b[1].toFixed(1)}`; }
+  gGrp.append("path").attr("class","grp-line").attr("d", d);
+}
+const hint = () => `<span class="h">Cliquez sur ${VIEW === "aca" ? "une académie pour voir ses départements" : VIEW === "reg" ? "une région pour voir ses départements" : "un département pour voir ses communes"}.</span>`;
 function paintComs(){
   d3.selectAll("path.com").attr("fill", f => comFill(f.properties.c));
 }
 function paintDeps(){
   allDeps().attr("fill", f => {
     if (BUD.on) return zoomed ? "var(--line)" : "transparent";
+    if (VIEW !== "dep" && !zoomedGrp && grpOf(f.properties.c)){ const o = grpData(grpOf(f.properties.c)); return color(o[K]); }
     const d = DATA.deps[f.properties.c]; return d ? color(d[K]) : "var(--line)";
   });
 }
@@ -658,6 +724,7 @@ function drawCanvas(){
   const dpr = Math.min(2, devicePixelRatio || 1);
   if (cv.width !== W*dpr){ cv.width = W*dpr; cv.height = H*dpr; }
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  if (!view.om) ctx.setTransform(dpr*view.k, 0, 0, dpr*view.k, dpr*view.tx, dpr*view.ty);
   const cs = getComputedStyle(document.documentElement);
   const cols = ["--ok","--close","--over","--nodata"].map(v => cs.getPropertyValue(v).trim());
   const groups = [[],[],[],[]];
@@ -700,6 +767,7 @@ function drawBudSum(){
     : `Avec <b>${nf(BUD.v)}\u00a0€${MODE === "achat" ? "" : " par mois"}</b> pour`;
   let txt = `${debut} ${PHRASE[BUD.t]} de ${SURF[BUD.t]}\u00a0m² : <b>${nf(s.ok)} communes sur ${nf(s.n)}</b> sont dans ${parSalaire ? "ce budget" : "ton budget"}. Elles regroupent ${Math.round(100*s.popOk/s.pop)}\u00a0% des habitants.`;
   if (zoomed){ const z = budStats(zoomed); txt += ` <b>${DATA.deps[zoomed].n} : ${nf(z.ok)} sur ${nf(z.n)}.</b>`; }
+  else if (zoomedGrp){ const z = budStats(GROUPS[VIEW][zoomedGrp]); txt += ` <b>${grpLabel(zoomedGrp)} : ${nf(z.ok)} sur ${nf(z.n)}.</b>`; }
   el.innerHTML = txt;
 }
 function applyBudget(){
@@ -771,12 +839,29 @@ function drawFigs(){
 
 // --- Classement
 function drawRank(){
-  const ds = Object.entries(DATA.deps).filter(([,d]) => d[K] != null).sort((x,y)=>y[1][K]-x[1][K]);
-  const li = ([c,d]) => `<li><button data-c="${c}">${d.n}</button><span>${fmt(d[K])}</span></li>`;
+  const ds = (VIEW === "dep" ? Object.entries(DATA.deps).map(([c,d]) => [c, d.n, d[K]]) : Object.keys(GROUPS[VIEW]).map(n => [n, grpLabel(n).replace(/^Académie (de |d')/, ""), grpData(n)[K]]))
+    .filter(x => x[2] != null).sort((x,y) => y[2] - x[2]);
+  const n = Math.min(10, Math.floor(ds.length / 2));
+  const li = ([c,nom,v]) => `<li><button data-c="${c}">${nom}</button><span>${fmt(v)}</span></li>`;
   document.getElementById("rank").innerHTML =
-    `<div><h3>Les 10 plus chers</h3><ol>${ds.slice(0,10).map(li).join("")}</ol></div>
-     <div><h3>Les 10 moins chers</h3><ol>${ds.slice(-10).reverse().map(li).join("")}</ol></div>`;
-  document.querySelectorAll("#rank button").forEach(b => b.onclick = () => { zoomTo(b.dataset.c); showMap(); });
+    `<div><h3>Les ${n} plus chers</h3><ol>${ds.slice(0,n).map(li).join("")}</ol></div>
+     <div><h3>Les ${n} moins chers</h3><ol>${ds.slice(-n).reverse().map(li).join("")}</ol></div>`;
+  document.querySelectorAll("#rank button").forEach(b => b.onclick = () => { VIEW === "dep" ? zoomTo(b.dataset.c) : zoomGroup(b.dataset.c); showMap(); });
+}
+function selectGroup(n){
+  selDep = null;
+  const t = document.getElementById("d-title"), list = document.getElementById("d-list"), rank = document.getElementById("rank"), o = grpData(n);
+  rank.hidden = true; list.hidden = false;
+  t.innerHTML = `${o.n} <span style="color:var(--muted);font-weight:500">· ${fmt(o[K])}/m²</span>`;
+  const ds = o.deps.map(c => [c, DATA.deps[c]]).sort((x,y) => (y[1][K] ?? -1) - (x[1][K] ?? -1));
+  list.innerHTML = `<li class="h"><span>Départements</span><span>Appart.</span><span class="x">Maison</span></li>` +
+    ds.map(([c,d]) => `<li class="click" data-dep="${c}" tabindex="0"><span class="n">${d.n} <span class="d">${c}</span></span><span>${fmt(d.a)}</span><span class="x">${fmt(d.m)}</span></li>`).join("") +
+    `<li><span class="n"><button id="back" class="lnk">← Revenir au classement</button></span><span></span><span></span></li>`;
+  list.querySelectorAll("li[data-dep]").forEach(li => {
+    li.onclick = () => { zoomTo(li.dataset.dep); showMap(); };
+    li.onkeydown = e => { if (e.key === "Enter") li.onclick(); };
+  });
+  document.getElementById("back").onclick = () => zoomOut();
 }
 
 // --- Détail d'un département (panneau)
@@ -785,7 +870,7 @@ function selectDep(code){
   const t = document.getElementById("d-title");
   const list = document.getElementById("d-list");
   const rank = document.getElementById("rank");
-  if (!code){ t.textContent = "Classement des départements"; list.hidden = true; rank.hidden = false; drawRank(); return; }
+  if (!code){ t.textContent = "Classement des " + ({dep: "départements", aca: "académies", reg: "régions"})[VIEW]; list.hidden = true; rank.hidden = false; drawRank(); return; }
   const d = DATA.deps[code];
   rank.hidden = true; list.hidden = false;
   t.innerHTML = `${d.n} <span style="color:var(--muted);font-weight:500">· ${fmt(d[K])}/m²</span>`;
@@ -831,9 +916,17 @@ q.addEventListener("input", search);
 // --- Rendu
 function render(){
   PAL = colors();
-  paintDeps(); paintComs(); drawMiniComs(); drawCanvas(); drawFigs(); drawLegend(); drawTop5(); drawBudSum(); drawCities();
-  selectDep(selDep);
+  paintDeps(); paintComs(); drawMiniComs(); drawCanvas(); drawFigs(); drawLegend(); drawTop5(); drawBudSum(); drawCities(); drawGrpLines();
+  if (zoomedGrp) selectGroup(zoomedGrp); else selectDep(selDep);
 }
+document.querySelectorAll("#vue-seg button").forEach(b => b.onclick = () => {
+  if (b.dataset.v === VIEW) return;
+  if (zoomed || zoomedGrp) zoomOut();
+  VIEW = b.dataset.v;
+  document.querySelectorAll("#vue-seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  mapTitle.innerHTML = hint();
+  paintDeps(); drawGrpLines(); selectDep(null);
+});
 document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
   K = b.dataset.k;
   document.querySelectorAll("#k-seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
@@ -841,7 +934,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Régions et académies : <a href="https://www.data.gouv.fr/datasets/referentiel-geographique-francais-communes-unites-urbaines-aires-urbaines-departements-academies-regions" target="_blank" rel="noopener">référentiel géographique</a> du ministère de l'Enseignement supérieur et de la Recherche. La valeur d'une région ou d'une académie est la moyenne de ses communes, pondérée par la population (aussi en mode Acheter).</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
 
 
 // --- Comparer deux communes
@@ -894,6 +987,8 @@ function drawCmp(){
      <tr><td>Habitants</td><td>${A.p.toLocaleString("fr-FR")}</td><td>${B.p.toLocaleString("fr-FR")}</td></tr>
      <tr><td>Niveau de vie médian<small>par mois, INSEE 2021</small></td><td>${A.rev != null ? parMois(A.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td><td>${B.rev != null ? parMois(B.rev).toLocaleString("fr-FR") + "\u00a0€" : "—"}</td></tr>
      ${MODE === "achat" ? "" : `<tr><td>Loyer d'un 1 ou 2 pièces<small>part du niveau de vie</small></td><td>${partLoyer(A) != null ? partLoyer(A) + "\u00a0%" : "—"}</td><td>${partLoyer(B) != null ? partLoyer(B) + "\u00a0%" : "—"}</td></tr>`}
+     <tr><td>Académie</td><td>${ZD[A.d]?.[0] || "—"}</td><td>${ZD[B.d]?.[0] || "—"}</td></tr>
+     <tr><td>Région</td><td>${ZD[A.d]?.[1] || "—"}</td><td>${ZD[B.d]?.[1] || "—"}</td></tr>
      <tr><td>Tension du marché<small>zone A bis à C</small></td><td>${A.abc || "—"}</td><td>${B.abc || "—"}</td></tr>
      <tr><td>Loyers plafonnés</td><td>${["non","en partie","oui"][A.enc || 0]}</td><td>${["non","en partie","oui"][B.enc || 0]}</td></tr>
      <tr><td>Gare la plus proche<small>SNCF, à vol d'oiseau</small></td><td>${gareTxt(A, "g")}</td><td>${gareTxt(B, "g")}</td></tr>
@@ -942,7 +1037,7 @@ function setMode(m){
   BUD.v = B.v; budV.value = B.v; budR.value = Math.min(B.max, B.v); syncRange();
   document.querySelectorAll("#mode-seg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.mode === m));
   render(); search(); drawCmp();
-  if (zoomed) zoomTo(zoomed, hlCode); else drawCities();
+  if (zoomed) zoomTo(zoomed, hlCode); else if (zoomedGrp) zoomGroup(zoomedGrp); else drawCities();
 }
 document.querySelectorAll("#mode-seg button").forEach(b => b.onclick = () => { if (b.dataset.mode !== MODE) setMode(b.dataset.mode); });
 search(); render(); drawCities(); drawCmp();
