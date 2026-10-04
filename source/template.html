@@ -110,6 +110,8 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);l
 .dot.st0{background:var(--ok)} .dot.st1{background:var(--close)} .dot.st2{background:var(--over)}
 .legend .li{display:inline-flex;align-items:center;margin-right:18px;font-size:13px;color:var(--fg)}
 .tip .ex{margin-top:6px}
+.tip .tm b.sp{font-weight:500;white-space:normal;max-width:24ch;text-align:right}
+.tip{max-width:min(92vw,380px)}
 .tip .bl{margin-top:6px;font-size:13px;font-weight:600}
 #map .cities{pointer-events:none}
 .top5{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px}
@@ -274,6 +276,8 @@ let MODE = "loc";
 // Niveau de vie médian annuel (INSEE, Filosofi 2021) et indicateurs (zonage ABC, logements vacants, encadrement)
 const REVENUS = __REVENUS__;
 const INDIC = __INDIC__;
+// Gare la plus proche (SNCF) et services sur place (INSEE, BPE 2025) : code -> [km gare, n° gare, km grande gare, n° grande gare, médecins, pharmacies, écoles, collèges, supermarchés, boulangeries]
+const SERV = __SERVICES__;
 
 const REF = {a:52, m:92};
 const LABEL = {a:"appartement", m:"maison"};
@@ -311,6 +315,8 @@ Object.entries(DATA.deps).forEach(([code, d]) => {
   const v = VENTES.deps[code] || {};
   d.V = {a:v.a ?? null, m:v.m ?? null, a12:v.a12 ?? null, a3:v.a3 ?? null};
 });
+const SERV_LAB = [["médecin","médecins généralistes"],["pharmacie","pharmacies"],["école","écoles"],["collège","collèges"],["supermarché","supermarchés"],["boulangerie","boulangeries"]];
+COMS.forEach(c => { const s = SERV.coms[c.c]; if (s) c.sv = {gk: s[0], g: s[1] != null ? SERV.gares[s[1]] : null, ak: s[2], a: s[3] != null ? SERV.gares[s[3]] : null, nb: s.slice(4)}; });
 COMS.forEach(c => { c.rev = REVENUS.coms[c.c] ?? null; c.abc = INDIC.abc[c.c] || null; c.vac = INDIC.vac[c.c] ?? null; c.enc = INDIC.enc[c.c] || 0; });
 Object.entries(DATA.deps).forEach(([code, d]) => { d.rev = REVENUS.deps[code] ?? null; });
 DATA.fr.L = {a:DATA.fr.a, m:DATA.fr.m, a12:DATA.fr.a12, a3:DATA.fr.a3}; DATA.fr.V = {...VENTES.fr};
@@ -464,7 +470,9 @@ function origine(o){
 }
 const parMois = rev => Math.round(rev / 12 / 10) * 10;
 // Part du loyer d'un 1 ou 2 pièces (37 m²) dans le niveau de vie médian mensuel
-const partLoyer = o => o.rev && o.L && o.L.a12 != null ? Math.round(100 * Math.round(o.L.a12 * 37 / 10) * 10 / (o.rev / 12)) : null;
+// Loyer d'un 1 ou 2 pièces : valeur location gardée (L), ou valeur courante pour les villes entières en mode Louer
+const loyer12 = o => o.L ? o.L.a12 : MODE !== "achat" ? o.a12 : null;
+const partLoyer = o => o.rev && loyer12(o) != null ? Math.round(100 * Math.round(loyer12(o) * 37 / 10) * 10 / (o.rev / 12)) : null;
 function indicHtml(o){
   const l = [];
   if (o.rev != null){
@@ -475,6 +483,17 @@ function indicHtml(o){
   if (o.abc) l.push(`<span>Tension du marché</span><b>zone ${o.abc}</b>`);
   if (o.enc) l.push(`<span>Loyers plafonnés</span><b>${o.enc === 2 ? "oui" : "en partie"}</b>`);
   if (o.vac != null) l.push(`<span>Logements privés vides</span><b>${o.vac.toLocaleString("fr-FR")}\u00a0%</b>`);
+  if (o.sv){
+    const kmf = k => k.toLocaleString("fr-FR", {maximumFractionDigits: 1}) + "\u00a0km";
+    if (o.sv.gk == null) l.push(`<span>Gare</span><b>pas de gare SNCF</b>`);
+    else {
+      l.push(`<span>Gare la plus proche</span><b>${o.sv.g} · ${kmf(o.sv.gk)}</b>`);
+      if (o.sv.a !== o.sv.g) l.push(`<span>Grande gare nationale</span><b>${o.sv.a} · ${kmf(o.sv.ak)}</b>`);
+    }
+    const oui = SERV_LAB.filter((_, i) => o.sv.nb[i] > 0).map(x => x[0]), non = SERV_LAB.filter((_, i) => !o.sv.nb[i]).map(x => x[0]);
+    l.push(`<span>Sur place</span><b class="sp">${oui.length ? oui.join(", ") : "aucun de ces services"}</b>`);
+    if (oui.length && non.length) l.push(`<span>Pas de</span><b class="sp">${non.join(", ")}</b>`);
+  }
   return l.length ? `<div class="tm ex">${l.join("")}</div>` : "";
 }
 function tipHtml(title, sub, o){
@@ -822,7 +841,7 @@ document.querySelectorAll("#k-seg button").forEach(b => b.onclick = () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 
-document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li></ul>`;
+document.getElementById("note").innerHTML = `<h2 class="nh">Sources et méthode</h2>__CREDIT__<ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025/" target="_blank" rel="noopener">Carte des loyers 2025</a>, ANIL et ministère du Logement, annonces leboncoin et SeLoger publiées jusqu'au 30 septembre 2025.</li><li>Les valeurs sont calculées pour un logement type de 52 m² (appartement) ou 92 m² (maison) proposé à la location au 3e trimestre 2025.</li><li>Ce sont des loyers d'annonce : ils concernent les logements remis en location et dépassent souvent les loyers payés par les locataires déjà en place.</li><li>Moyennes départementales pondérées par la population communale (INSEE, via geo.api.gouv.fr).</li><li>Les loyers par mois sont ceux des logements types de la source : 37 m² pour un appartement de 1 ou 2 pièces, 72 m² pour 3 pièces ou plus, 92 m² pour une maison. Le loyer réel dépend de la surface et de l'état du logement.</li><li>Dans la liste des 5 villes les plus peuplées, Paris, Lyon et Marseille ont la moyenne de leurs arrondissements, pondérée de la même façon.</li><li>Contours des communes : Etalab, version simplifiée (plus précise pour Paris, la petite couronne et les arrondissements de Lyon et Marseille).</li><li>Mayotte n'est pas couverte.</li><li>« Je gagne… » : aucune loi ne fixe de seuil, mais beaucoup de propriétaires demandent des revenus nets d'au moins 3 fois le loyer charges comprises, soit un loyer d'au plus un tiers du salaire. Certains acceptent moins, selon la situation.</li></ul><h2 class="nh" style="margin-top:14px">Prix de vente (mode Acheter)</h2><ul><li>Source : <a href="https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/" target="_blank" rel="noopener">Demandes de valeurs foncières géolocalisées</a>, DGFiP et Etalab : ventes signées chez le notaire en 2024 et 2025.</li><li>Seules les ventes d'un seul logement (une maison ou un appartement, avec ou sans garage ou cave) sont gardées. Prix au m² = prix de vente ÷ surface habitable.</li><li>Valeur affichée : prix médian au m² de la commune si elle compte au moins 20 ventes, sinon celui de la ville entière (Paris, Lyon, Marseille) ou de l'intercommunalité, signalé dans la bulle.</li><li>Le prix d'achat estimé d'un logement = prix médian au m² × 37, 72 ou 92 m², comme pour les loyers. Le prix réel dépend de l'état, de l'étage, du terrain…</li><li>Alsace (Bas-Rhin, Haut-Rhin), Moselle et Mayotte ne sont pas couvertes par la source (droit local) ; la Guyane a trop peu de ventes.</li></ul><h2 class="nh" style="margin-top:14px">Autres indicateurs</h2><ul><li>Niveau de vie médian : <a href="https://www.insee.fr/fr/statistiques/7756729" target="_blank" rel="noopener">INSEE, Filosofi 2021</a>, dernière édition disponible. C'est le revenu disponible du ménage (après impôts, avec les aides) divisé selon la taille du ménage : pour une personne seule, ce qu'elle a pour vivre. Non publié pour les plus petites communes. Paris, Lyon et Marseille entières : valeur de la ville.</li><li>Part du loyer : loyer type d'un 1 ou 2 pièces (37 m²) divisé par le niveau de vie médian mensuel. C'est un repère pour une personne seule au revenu médian, pas le budget d'un ménage précis.</li><li>Tension du marché : <a href="https://www.data.gouv.fr/fr/datasets/liste-des-communes-selon-le-zonage-abc/" target="_blank" rel="noopener">zonage ABC</a> du ministère de la Transition écologique, en vigueur au 26 juin 2026, de A bis (le plus tendu) à C (le moins tendu).</li><li>Loyers plafonnés : liste de <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1314" target="_blank" rel="noopener">service-public.gouv.fr</a> vérifiée le 1er août 2026 (Paris, Est Ensemble, Plaine Commune, Lille, Lyon, Villeurbanne, Montpellier, Bordeaux, Pays basque, Grenoble-Alpes Métropole, parfois sur une partie de la commune). Dispositif expérimental prévu jusqu'au 24 novembre 2026, sauf prolongation.</li><li>Logements privés vides : <a href="https://www.data.gouv.fr/fr/datasets/logements-vacants-du-parc-prive-par-commune-departement-region-france/" target="_blank" rel="noopener">LOVAC</a> (ministère, Cerema), part des logements du parc privé vacants au 1er janvier 2024. Non publié quand les nombres sont trop petits.</li><li>Gares : <a href="https://www.data.gouv.fr/fr/datasets/gares-de-voyageurs-1/" target="_blank" rel="noopener">Gares de voyageurs</a> (SNCF, octobre 2026). Distance à vol d'oiseau depuis le centre de la commune ; « grande gare nationale » = gare de catégorie A (intérêt national) selon la SNCF. La Corse (Chemins de fer de la Corse) et l'outre-mer ne sont pas dans ce fichier.</li><li>Services sur place : <a href="https://www.insee.fr/fr/statistiques/8217537" target="_blank" rel="noopener">INSEE, base permanente des équipements 2025</a> : nombre de médecins généralistes, pharmacies, écoles (maternelles, primaires, élémentaires), collèges, supermarchés ou hypermarchés et boulangeries situés dans la commune.</li></ul>`;
 
 
 // --- Comparer deux communes
@@ -834,7 +853,10 @@ function cmpPool(){
       const vc = {Paris: "75056", Lyon: "69123", Marseille: "13055"}[n];
       const arr = COMS.filter(c => c.d === d && c.n.startsWith(n + " "));
       return {...g, c: null, d, n: `${n} (toute la ville)`, s: n, sub: "toute la ville · ", k: norm(n),
-              rev: REVENUS.coms[vc] ?? null, abc: INDIC.abc[arr[0].c] || null, enc: arr.every(c => c.enc === 2) ? 2 : 0, vac: null};
+              rev: REVENUS.coms[vc] ?? null, abc: INDIC.abc[arr[0].c] || null, enc: arr.every(c => c.enc === 2) ? 2 : 0, vac: null,
+              sv: (() => { const s = arr.map(c => c.sv).filter(Boolean); if (!s.length) return null;
+                const g = s.reduce((m, x) => x.gk != null && (m == null || x.gk < m.gk) ? x : m, null), a = s.reduce((m, x) => x.ak != null && (m == null || x.ak < m.ak) ? x : m, null);
+                return {gk: g && g.gk, g: g && g.g, ak: a && a.ak, a: a && a.a, nb: SERV_LAB.map((_, i) => s.reduce((t, x) => t + x.nb[i], 0))}; })()};
     });
   }
   return VIRT.concat(COMS);
@@ -851,6 +873,7 @@ function cmpDiff(a, b, sf){
   if (d === 0) return `<small>${MODE === "achat" ? "même prix" : "même loyer"}</small>`;
   return `<small>${d > 0 ? "+" : "−"}${Math.abs(d).toLocaleString("fr-FR")} € (${p > 0 ? "+" : "−"}${Math.abs(p)} %)</small>`;
 }
+const gareTxt = (c, w) => !c.sv ? "—" : c.sv[w + "k"] == null ? "pas de gare SNCF" : `${c.sv[w]}<small>${c.sv[w + "k"].toLocaleString("fr-FR", {maximumFractionDigits: 1})}\u00a0km</small>`;
 function drawCmp(){
   const [A, B] = CMP, box = document.getElementById("cmp-t");
   const nA = A && (A.s || A.n), nB = B && (B.s || B.n), dn = c => (c.sub || "") + (DATA.deps[c.d] ? DATA.deps[c.d].n : c.d);
@@ -873,6 +896,9 @@ function drawCmp(){
      ${MODE === "achat" ? "" : `<tr><td>Loyer d'un 1 ou 2 pièces<small>part du niveau de vie</small></td><td>${partLoyer(A) != null ? partLoyer(A) + "\u00a0%" : "—"}</td><td>${partLoyer(B) != null ? partLoyer(B) + "\u00a0%" : "—"}</td></tr>`}
      <tr><td>Tension du marché<small>zone A bis à C</small></td><td>${A.abc || "—"}</td><td>${B.abc || "—"}</td></tr>
      <tr><td>Loyers plafonnés</td><td>${["non","en partie","oui"][A.enc || 0]}</td><td>${["non","en partie","oui"][B.enc || 0]}</td></tr>
+     <tr><td>Gare la plus proche<small>SNCF, à vol d'oiseau</small></td><td>${gareTxt(A, "g")}</td><td>${gareTxt(B, "g")}</td></tr>
+     <tr><td>Grande gare nationale</td><td>${gareTxt(A, "a")}</td><td>${gareTxt(B, "a")}</td></tr>
+     ${SERV_LAB.map(([, pl], i) => `<tr><td>${pl[0].toUpperCase() + pl.slice(1)}<small>sur place, INSEE 2025</small></td><td>${A.sv ? A.sv.nb[i].toLocaleString("fr-FR") : "—"}</td><td>${B.sv ? B.sv.nb[i].toLocaleString("fr-FR") : "—"}</td></tr>`).join("")}
      <tr><td>Logements privés vides</td><td>${A.vac != null ? A.vac.toLocaleString("fr-FR") + "\u00a0%" : "—"}</td><td>${B.vac != null ? B.vac.toLocaleString("fr-FR") + "\u00a0%" : "—"}</td></tr>
      <tr class="act"><td></td><td><button class="lnk" data-i="0">Voir sur la carte</button></td><td><button class="lnk" data-i="1">Voir sur la carte</button></td></tr>
     </tbody></table>`;
